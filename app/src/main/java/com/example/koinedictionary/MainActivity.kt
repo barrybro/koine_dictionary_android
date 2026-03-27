@@ -20,6 +20,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.koinedictionary.features.alphabet.ui.AlphabetScreen
+import com.example.koinedictionary.features.alphabet.ui.AlphabetViewModel
 import com.example.koinedictionary.features.settings.ui.SettingsScreen
 import com.example.koinedictionary.features.settings.ui.SettingsViewModel
 import com.example.koinedictionary.ui.theme.KoineDictionaryTheme
@@ -66,7 +68,10 @@ fun MainScreen() {
         ) {
             when (selectedTabIndex) {
                 0 -> Text("Dictionary Screen")
-                1 -> Text("Alphabet Screen")
+                1 -> AlphabetScreen(
+                    viewModel = AlphabetViewModel(),
+                    modifier = Modifier
+                )
                 2 -> SettingsScreen(
                     viewModel = SettingsViewModel(),
                     modifier = Modifier
