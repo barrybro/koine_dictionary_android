@@ -6,8 +6,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -19,14 +20,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.koinedictionary.features.alphabet.ui.AlphabetScreen
-import com.example.koinedictionary.features.alphabet.ui.AlphabetViewModel
 import com.example.koinedictionary.features.dictionary.ui.DictionaryScreen
-import com.example.koinedictionary.features.dictionary.ui.DictionaryViewModel
 import com.example.koinedictionary.features.settings.ui.SettingsScreen
-import com.example.koinedictionary.features.settings.ui.SettingsViewModel
 import com.example.koinedictionary.ui.theme.KoineDictionaryTheme
 
 class MainActivity : ComponentActivity() {
@@ -48,16 +47,40 @@ fun MainScreen() {
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        topBar = {
+        bottomBar = {
             TabRow(
                 selectedTabIndex = selectedTabIndex,
-                modifier = Modifier.statusBarsPadding()
+                modifier = Modifier.navigationBarsPadding()
             ) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
                         selected = selectedTabIndex == index,
                         onClick = { selectedTabIndex = index },
-                        text = { Text(text = title) }
+                        text = { Text(text = title) },
+                        icon = {
+                            when (index) {
+                                0 -> {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.outline_book_2_24),
+                                        contentDescription = null
+                                    )
+                                }
+
+                                1 -> {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.outline_book_6_24),
+                                        contentDescription = null
+                                    )
+                                }
+
+                                2 -> {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.baseline_settings_24),
+                                        contentDescription = null
+                                    )
+                                }
+                            } 
+                        }
                     )
                 }
             }
@@ -74,10 +97,12 @@ fun MainScreen() {
                     viewModel = viewModel(),
                     modifier = Modifier
                 )
+
                 1 -> AlphabetScreen(
                     viewModel = viewModel(),
                     modifier = Modifier
                 )
+
                 2 -> SettingsScreen(
                     viewModel = viewModel(),
                     modifier = Modifier
