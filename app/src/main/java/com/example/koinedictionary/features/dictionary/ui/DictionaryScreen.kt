@@ -12,17 +12,32 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.koinedictionary.data.models.DictionaryEntry
+import com.example.koinedictionary.singletons.DictionaryService
 
 @Composable
 fun DictionaryScreen(viewModel: DictionaryViewModel, modifier: Modifier = Modifier) {
-    val entries by viewModel.uiState.collectAsState()
+    val completeDictionary = DictionaryService.completeHashMap
+    val dictionaryKeys = completeDictionary.keys.sorted()
 
     LazyColumn(modifier = modifier) {
-        items(entries) { entry ->
-            DictionaryEntryRow(entry)
-            HorizontalDivider()
+        for (key in dictionaryKeys) {
+            item {
+                Text(
+                    text = "${key.uppercase()} ${key.lowercase()}",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 24.sp,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+            val entries = completeDictionary[key] ?: emptyList()
+            items(entries) { entry ->
+                DictionaryEntryRow(entry)
+                HorizontalDivider()
+            }
         }
     }
 }

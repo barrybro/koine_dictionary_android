@@ -12,7 +12,7 @@ object DictionaryService {
     private var database: SQLiteDatabase? = null
     private val greekAlphabet = "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ"
 
-    private var completeHashMap: HashMap<String, List<DictionaryEntry>> = HashMap()
+    var completeHashMap: HashMap<String, List<DictionaryEntry>> = HashMap()
 
     /**
      * Opens the database. If it doesn't exist in the app's internal storage, 
@@ -44,13 +44,9 @@ object DictionaryService {
 
     fun setupDictionaryStructure() {
         for (letter in greekAlphabet) {
-            val entries = getEntriesByKeyLetter(getContext(), letter.toString())
-            completeHashMap[letter.toString()] = entries // TODO: Sort entries alphabetically by word
+            val entries = getEntriesByKeyLetter(getContext(), letter.toString().lowercase())
+            completeHashMap[letter.toString()] = entries.sortedBy { it.word }
         }
-//        val allEntries = getAllEntries(KoineDictionaryApplication.instance.applicationContext)
-//        for (entry in allEntries) {
-//
-//        }
     }
 
     /**
@@ -66,11 +62,11 @@ object DictionaryService {
     /**
      * Retrieves all entries from the 'greekDictionaryEntry' table that match the given key letter.
      */
-    fun getEntriesByKeyLetter(context: Context, keyLetter: String): List<DictionaryEntry> {
+    fun getEntriesByKeyLetter(context: Context, letter: String): List<DictionaryEntry> {
         val db = getDatabase(context)
         return db.rawQuery(
             "SELECT * FROM greekDictionaryEntry WHERE keyLetter = ?",
-            arrayOf(keyLetter)
+            arrayOf(letter)
         ).use { cursor ->
             mapCursorToEntries(cursor)
         }
