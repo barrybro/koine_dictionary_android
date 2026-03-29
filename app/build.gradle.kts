@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.koinedictionary"
+    namespace = "com.whoisbarry.koinedictionary"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -12,7 +12,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.koinedictionary"
+        applicationId = "com.whoisbarry.koinedictionary"
         minSdk = 29
         targetSdk = 36
         versionCode = 1
