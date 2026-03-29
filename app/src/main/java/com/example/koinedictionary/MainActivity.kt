@@ -79,7 +79,7 @@ fun MainScreen() {
                                         contentDescription = null
                                     )
                                 }
-                            } 
+                            }
                         }
                     )
                 }
