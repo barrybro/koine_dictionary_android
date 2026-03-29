@@ -26,17 +26,24 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.koinedictionary.features.alphabet.ui.AlphabetScreen
 import com.example.koinedictionary.features.dictionary.ui.DictionaryScreen
 import com.example.koinedictionary.features.settings.ui.SettingsScreen
+import com.example.koinedictionary.singletons.TextToSpeechService
 import com.example.koinedictionary.ui.theme.KoineDictionaryTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        TextToSpeechService.init(this)
         enableEdgeToEdge()
         setContent {
             KoineDictionaryTheme {
                 MainScreen()
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        TextToSpeechService.shutdown()
     }
 }
 
