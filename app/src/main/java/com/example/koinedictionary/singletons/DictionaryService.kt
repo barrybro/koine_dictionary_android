@@ -10,12 +10,15 @@ import java.io.FileOutputStream
 object DictionaryService {
     private const val DATABASE_NAME = "pocketGreekEntries.sqlite"
     private var database: SQLiteDatabase? = null
+    private val greekAlphabet = "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ"
+
+    private var completeHashMap: HashMap<String, List<DictionaryEntry>> = HashMap()
 
     /**
      * Opens the database. If it doesn't exist in the app's internal storage, 
      * it copies it from the assets folder.
      */
-    fun getDatabase(context: Context): SQLiteDatabase {
+    private fun getDatabase(context: Context): SQLiteDatabase {
         if (database == null || !database!!.isOpen) {
             val dbFile = context.getDatabasePath(DATABASE_NAME)
             if (!dbFile.exists()) {
@@ -33,6 +36,21 @@ object DictionaryService {
                 inputStream.copyTo(outputStream)
             }
         }
+    }
+
+    private fun getContext(): Context {
+        return KoineDictionaryApplication.instance.applicationContext
+    }
+
+    fun setupDictionaryStructure() {
+        for (letter in greekAlphabet) {
+            val entries = getEntriesByKeyLetter(getContext(), letter.toString())
+            completeHashMap[letter.toString()] = entries // TODO: Sort entries alphabetically by word
+        }
+//        val allEntries = getAllEntries(KoineDictionaryApplication.instance.applicationContext)
+//        for (entry in allEntries) {
+//
+//        }
     }
 
     /**
