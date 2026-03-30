@@ -72,6 +72,16 @@ object DictionaryService {
         }
     }
 
+    /**
+     * Retrieves a random entry from the 'greekDictionaryEntry' table.
+     */
+    fun getRandomEntry(context: Context): DictionaryEntry? {
+        val db = getDatabase(context)
+        return db.rawQuery("SELECT * FROM greekDictionaryEntry ORDER BY RANDOM() LIMIT 1", null).use { cursor ->
+            mapCursorToEntries(cursor).firstOrNull()
+        }
+    }
+
     private fun mapCursorToEntries(cursor: Cursor): List<DictionaryEntry> {
         val entries = mutableListOf<DictionaryEntry>()
         val idIndex = cursor.getColumnIndex("id")
