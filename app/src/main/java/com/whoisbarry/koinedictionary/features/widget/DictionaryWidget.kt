@@ -61,14 +61,14 @@ class DictionaryWidget : GlanceAppWidget() {
                         text = entry.word,
                         style = TextStyle(
                             fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
+                            fontSize = 24.sp,
                             color = GlanceTheme.colors.onSurface
                         )
                     )
                     Text(
                         text = entry.gloss,
                         style = TextStyle(
-                            fontSize = 14.sp,
+                            fontSize = 20.sp,
                             color = GlanceTheme.colors.onSurfaceVariant
                         )
                     )
