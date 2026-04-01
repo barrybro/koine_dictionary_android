@@ -8,6 +8,8 @@ import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
+import androidx.glance.action.actionStartActivity
+import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.provideContent
@@ -21,6 +23,7 @@ import androidx.glance.layout.padding
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
+import com.whoisbarry.koinedictionary.MainActivity
 import com.whoisbarry.koinedictionary.data.models.DictionaryEntry
 import com.whoisbarry.koinedictionary.singletons.DictionaryService
 import androidx.glance.appwidget.updateAll
@@ -50,7 +53,8 @@ class DictionaryWidget : GlanceAppWidget() {
             modifier = GlanceModifier
                 .fillMaxSize()
                 .background(backgroundColor)
-                .padding(16.dp),
+                .padding(16.dp)
+                .clickable(actionStartActivity<MainActivity>()),
             verticalAlignment = Alignment.Top,
             horizontalAlignment = Alignment.Start
         ) {
