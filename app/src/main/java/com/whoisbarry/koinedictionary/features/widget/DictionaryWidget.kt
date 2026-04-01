@@ -23,11 +23,13 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.whoisbarry.koinedictionary.data.models.DictionaryEntry
 import com.whoisbarry.koinedictionary.singletons.DictionaryService
+import androidx.glance.appwidget.updateAll
+import androidx.work.*
+import java.util.concurrent.TimeUnit
 
 class DictionaryWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        // Fetch a random entry from the database
         val entry = DictionaryService.getRandomEntry(context)
 
         provideContent {
@@ -39,9 +41,6 @@ class DictionaryWidget : GlanceAppWidget() {
 
     @Composable
     private fun DictionaryWidgetContent(entry: DictionaryEntry?) {
-        // 20% transparent background (Alpha 0xCC = ~80% opacity / 20% transparency)
-        // Light mode: 20% transparent white
-        // Dark mode: 20% transparent black
         val backgroundColor = ColorProvider(
             day = Color(0xCCFFFFFF),
             night = Color(0xCC000000)
@@ -83,6 +82,49 @@ class DictionaryWidget : GlanceAppWidget() {
     }
 }
 
+class DictionaryWidgetWorker(
+    private val context: Context,
+    workerParameters: WorkerParameters
+) : CoroutineWorker(context, workerParameters) {
+
+    override suspend fun doWork(): Result {
+        DictionaryWidget().updateAll(context)
+        return Result.success()
+    }
+
+    companion object {
+        private const val WORK_NAME = "DictionaryWidgetUpdateWorker"
+
+        fun enqueue(context: Context, intervalHours: Int) {
+            val request = PeriodicWorkRequestBuilder<DictionaryWidgetWorker>(
+                intervalHours.toLong(), TimeUnit.HOURS
+            ).build()
+
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                WORK_NAME,
+                ExistingPeriodicWorkPolicy.REPLACE,
+                request
+            )
+        }
+
+        fun cancel(context: Context) {
+            WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
+        }
+    }
+}
+
 class DictionaryWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = DictionaryWidget()
+
+    override fun onEnabled(context: Context) {
+        super.onEnabled(context)
+        val prefs = context.getSharedPreferences("koine_dictionary_prefs", Context.MODE_PRIVATE)
+        val interval = prefs.getInt("widget_update_interval", 24)
+        DictionaryWidgetWorker.enqueue(context, interval)
+    }
+
+    override fun onDisabled(context: Context) {
+        super.onDisabled(context)
+        DictionaryWidgetWorker.cancel(context)
+    }
 }
