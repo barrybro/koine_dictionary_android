@@ -65,15 +65,20 @@ class DictionaryWidget : GlanceAppWidget() {
                     entry.word.length > 20 -> 14.sp
                     entry.word.length > 15 -> 18.sp
                     entry.word.length > 10 -> 21.sp
-                    else -> 24.sp
+                    else -> 28.sp
                 }
 
                 // Dynamic font size for the gloss based on its length
                 val glossFontSize = when {
+                    entry.gloss.length > 400 -> 6.sp
+                    entry.gloss.length > 300 -> 7.sp
+                    entry.gloss.length > 250 -> 8.sp
+                    entry.gloss.length > 200 -> 9.sp
+                    entry.gloss.length > 150 -> 10.sp
                     entry.gloss.length > 100 -> 11.sp
-                    entry.gloss.length > 60 -> 13.sp
-                    entry.gloss.length > 30 -> 15.sp
-                    else -> 16.sp
+                    entry.gloss.length > 70 -> 12.sp
+                    entry.gloss.length > 50 -> 14.sp
+                    else -> 18.sp
                 }
 
                 Text(
@@ -92,7 +97,7 @@ class DictionaryWidget : GlanceAppWidget() {
                         color = GlanceTheme.colors.onSurfaceVariant,
                         fontSize = glossFontSize
                     ),
-                    maxLines = 4
+                    maxLines = 12
                 )
             } else {
                 Text(
