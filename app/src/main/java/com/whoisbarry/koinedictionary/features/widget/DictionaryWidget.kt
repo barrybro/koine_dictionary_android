@@ -1,36 +1,34 @@
 package com.whoisbarry.koinedictionary.features.widget
 
 import android.content.Context
-import android.widget.RemoteViews
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
-import androidx.glance.LocalContext
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
-import androidx.glance.appwidget.AndroidRemoteViews
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.provideContent
+import androidx.glance.appwidget.updateAll
 import androidx.glance.background
 import androidx.glance.color.ColorProvider
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
+import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
-import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.height
 import androidx.glance.layout.padding
+import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
+import androidx.work.*
 import com.whoisbarry.koinedictionary.MainActivity
-import com.whoisbarry.koinedictionary.R
 import com.whoisbarry.koinedictionary.data.models.DictionaryEntry
 import com.whoisbarry.koinedictionary.singletons.DictionaryService
-import androidx.glance.appwidget.updateAll
-import androidx.work.*
 import java.util.concurrent.TimeUnit
 
 class DictionaryWidget : GlanceAppWidget() {
@@ -62,25 +60,47 @@ class DictionaryWidget : GlanceAppWidget() {
             horizontalAlignment = Alignment.Start
         ) {
             if (entry != null) {
-                val context = LocalContext.current
-                AndroidRemoteViews(
-                    remoteViews = RemoteViews(context.packageName, R.layout.widget_autosize_text).apply {
-                        setTextViewText(R.id.widget_word, entry.word)
-                        setTextViewText(R.id.widget_gloss, entry.gloss)
+                // Dynamic font size for the word based on its length
+                val wordFontSize = when {
+                    entry.word.length > 20 -> 14.sp
+                    entry.word.length > 15 -> 18.sp
+                    entry.word.length > 10 -> 21.sp
+                    else -> 24.sp
+                }
 
-                        // Apply colors from GlanceTheme
-                        val onSurface = GlanceTheme.colors.onSurface.getColor(context)
-                        val onSurfaceVariant = GlanceTheme.colors.onSurfaceVariant.getColor(context)
+                // Dynamic font size for the gloss based on its length
+                val glossFontSize = when {
+                    entry.gloss.length > 100 -> 11.sp
+                    entry.gloss.length > 60 -> 13.sp
+                    entry.gloss.length > 30 -> 15.sp
+                    else -> 16.sp
+                }
 
-                        setTextColor(R.id.widget_word, onSurface.toArgb())
-                        setTextColor(R.id.widget_gloss, onSurfaceVariant.toArgb())
-                    },
-                    modifier = GlanceModifier.fillMaxWidth()
+                Text(
+                    text = entry.word,
+                    style = TextStyle(
+                        color = GlanceTheme.colors.onSurface,
+                        fontSize = wordFontSize,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    maxLines = 1
+                )
+                Spacer(modifier = GlanceModifier.height(8.dp))
+                Text(
+                    text = entry.gloss,
+                    style = TextStyle(
+                        color = GlanceTheme.colors.onSurfaceVariant,
+                        fontSize = glossFontSize
+                    ),
+                    maxLines = 4
                 )
             } else {
                 Text(
                     text = "No entry found",
-                    style = TextStyle(color = GlanceTheme.colors.onSurface)
+                    style = TextStyle(
+                        color = GlanceTheme.colors.onSurface,
+                        fontWeight = FontWeight.Bold
+                    )
                 )
             }
         }
