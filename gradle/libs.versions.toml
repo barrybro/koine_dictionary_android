@@ -8,7 +8,7 @@ lifecycleRuntimeKtx = "2.6.1"
 activityCompose = "1.8.0"
 kotlin = "2.2.10"
 composeBom = "2024.09.00"
-glance = "1.1.1"
+glance = "1.2.0-rc01"
 workRuntimeKtx = "2.9.0"
 
 [libraries]

@@ -1,15 +1,18 @@
 package com.whoisbarry.koinedictionary.features.widget
 
 import android.content.Context
+import android.widget.RemoteViews
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
+import androidx.glance.LocalContext
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
+import androidx.glance.appwidget.AndroidRemoteViews
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.provideContent
@@ -20,10 +23,10 @@ import androidx.glance.layout.Column
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.padding
-import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.whoisbarry.koinedictionary.MainActivity
+import com.whoisbarry.koinedictionary.R
 import com.whoisbarry.koinedictionary.data.models.DictionaryEntry
 import com.whoisbarry.koinedictionary.singletons.DictionaryService
 import androidx.glance.appwidget.updateAll
@@ -59,23 +62,21 @@ class DictionaryWidget : GlanceAppWidget() {
             horizontalAlignment = Alignment.Start
         ) {
             if (entry != null) {
-                Column(modifier = GlanceModifier.fillMaxWidth()) {
-                    Text(
-                        text = entry.word,
-                        style = TextStyle(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 24.sp,
-                            color = GlanceTheme.colors.onSurface
-                        )
-                    )
-                    Text(
-                        text = entry.gloss,
-                        style = TextStyle(
-                            fontSize = 20.sp,
-                            color = GlanceTheme.colors.onSurfaceVariant
-                        )
-                    )
-                }
+                val context = LocalContext.current
+                AndroidRemoteViews(
+                    remoteViews = RemoteViews(context.packageName, R.layout.widget_autosize_text).apply {
+                        setTextViewText(R.id.widget_word, entry.word)
+                        setTextViewText(R.id.widget_gloss, entry.gloss)
+
+                        // Apply colors from GlanceTheme
+                        val onSurface = GlanceTheme.colors.onSurface.getColor(context)
+                        val onSurfaceVariant = GlanceTheme.colors.onSurfaceVariant.getColor(context)
+
+                        setTextColor(R.id.widget_word, onSurface.toArgb())
+                        setTextColor(R.id.widget_gloss, onSurfaceVariant.toArgb())
+                    },
+                    modifier = GlanceModifier.fillMaxWidth()
+                )
             } else {
                 Text(
                     text = "No entry found",
