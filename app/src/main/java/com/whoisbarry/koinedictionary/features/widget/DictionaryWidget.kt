@@ -13,21 +13,22 @@ import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.provideContent
+import androidx.glance.appwidget.updateAll
 import androidx.glance.background
 import androidx.glance.color.ColorProvider
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
+import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
-import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
+import androidx.work.*
 import com.whoisbarry.koinedictionary.MainActivity
 import com.whoisbarry.koinedictionary.data.models.DictionaryEntry
 import com.whoisbarry.koinedictionary.singletons.DictionaryService
-import androidx.glance.appwidget.updateAll
-import androidx.work.*
 import java.util.concurrent.TimeUnit
 
 class DictionaryWidget : GlanceAppWidget() {
@@ -59,27 +60,55 @@ class DictionaryWidget : GlanceAppWidget() {
             horizontalAlignment = Alignment.Start
         ) {
             if (entry != null) {
-                Column(modifier = GlanceModifier.fillMaxWidth()) {
-                    Text(
-                        text = entry.word,
-                        style = TextStyle(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 24.sp,
-                            color = GlanceTheme.colors.onSurface
-                        )
-                    )
-                    Text(
-                        text = entry.gloss,
-                        style = TextStyle(
-                            fontSize = 20.sp,
-                            color = GlanceTheme.colors.onSurfaceVariant
-                        )
-                    )
+                // Dynamic font size for the word based on its length
+                val wordFontSize = when {
+                    entry.word.length > 40 -> 6.sp
+                    entry.word.length > 25 -> 12.sp
+                    entry.word.length > 20 -> 14.sp
+                    entry.word.length > 15 -> 18.sp
+                    entry.word.length > 10 -> 20.sp
+                    else -> 24.sp
                 }
+
+                // Dynamic font size for the gloss based on its length
+                val glossFontSize = when {
+                    entry.gloss.length > 400 -> 6.sp
+                    entry.gloss.length > 300 -> 7.sp
+                    entry.gloss.length > 250 -> 8.sp
+                    entry.gloss.length > 200 -> 9.sp
+                    entry.gloss.length > 150 -> 10.sp
+                    entry.gloss.length > 100 -> 11.sp
+                    entry.gloss.length > 70 -> 12.sp
+                    entry.gloss.length > 50 -> 14.sp
+                    entry.gloss.length > 30 -> 16.sp
+                    else -> 18.sp
+                }
+
+                Text(
+                    text = entry.word,
+                    style = TextStyle(
+                        color = GlanceTheme.colors.onSurface,
+                        fontSize = wordFontSize,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    maxLines = 1
+                )
+                Spacer(modifier = GlanceModifier.height(8.dp))
+                Text(
+                    text = entry.gloss,
+                    style = TextStyle(
+                        color = GlanceTheme.colors.onSurfaceVariant,
+                        fontSize = glossFontSize
+                    ),
+                    maxLines = 12
+                )
             } else {
                 Text(
                     text = "No entry found",
-                    style = TextStyle(color = GlanceTheme.colors.onSurface)
+                    style = TextStyle(
+                        color = GlanceTheme.colors.onSurface,
+                        fontWeight = FontWeight.Bold
+                    )
                 )
             }
         }
