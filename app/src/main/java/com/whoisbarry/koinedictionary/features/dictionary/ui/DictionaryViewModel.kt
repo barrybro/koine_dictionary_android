@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.whoisbarry.koinedictionary.util.withoutDiacritics
 
 class DictionaryViewModel(application: Application) : AndroidViewModel(application) {
     private val _allEntries = MutableStateFlow<List<DictionaryEntry>>(emptyList())
@@ -24,7 +25,7 @@ class DictionaryViewModel(application: Application) : AndroidViewModel(applicati
         if (query.isBlank()) {
             entries
         } else {
-            entries.filter { it.word.contains(query, ignoreCase = true) || it.gloss.contains(query, ignoreCase = true) }
+            entries.filter { it.word.withoutDiacritics.contains(query, ignoreCase = true) || it.gloss.contains(query, ignoreCase = true) }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -35,11 +36,11 @@ class DictionaryViewModel(application: Application) : AndroidViewModel(applicati
     private fun loadEntries() {
         viewModelScope.launch(Dispatchers.IO) {
             val entries = DictionaryService.getAllEntries(getApplication())
-            _allEntries.value = entries.sortedBy { it.word }
+            _allEntries.value = entries.sortedBy { it.word.withoutDiacritics }
         }
     }
 
     fun onSearchQueryChanged(query: String) {
-        _searchQuery.value = query
+        _searchQuery.value = query.withoutDiacritics
     }
 }

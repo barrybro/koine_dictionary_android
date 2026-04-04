@@ -4,6 +4,7 @@ import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import com.whoisbarry.koinedictionary.data.models.DictionaryEntry
+import com.whoisbarry.koinedictionary.util.withoutDiacritics
 import java.io.File
 import java.io.FileOutputStream
 
@@ -45,7 +46,7 @@ object DictionaryService {
     fun setupDictionaryStructure() {
         for (letter in greekAlphabet) {
             val entries = getEntriesByKeyLetter(getContext(), letter.toString().lowercase())
-            completeHashMap[letter.toString()] = entries.sortedBy { it.word }
+            completeHashMap[letter.toString()] = entries.sortedBy { it.word.withoutDiacritics }
         }
     }
 
