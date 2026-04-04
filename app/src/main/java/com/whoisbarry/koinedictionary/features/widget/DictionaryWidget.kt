@@ -62,10 +62,12 @@ class DictionaryWidget : GlanceAppWidget() {
             if (entry != null) {
                 // Dynamic font size for the word based on its length
                 val wordFontSize = when {
+                    entry.word.length > 40 -> 6.sp
+                    entry.word.length > 25 -> 12.sp
                     entry.word.length > 20 -> 14.sp
                     entry.word.length > 15 -> 18.sp
-                    entry.word.length > 10 -> 21.sp
-                    else -> 28.sp
+                    entry.word.length > 10 -> 20.sp
+                    else -> 24.sp
                 }
 
                 // Dynamic font size for the gloss based on its length
@@ -78,6 +80,7 @@ class DictionaryWidget : GlanceAppWidget() {
                     entry.gloss.length > 100 -> 11.sp
                     entry.gloss.length > 70 -> 12.sp
                     entry.gloss.length > 50 -> 14.sp
+                    entry.gloss.length > 30 -> 16.sp
                     else -> 18.sp
                 }
 
