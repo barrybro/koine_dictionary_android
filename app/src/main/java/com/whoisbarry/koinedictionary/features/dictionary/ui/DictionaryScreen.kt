@@ -99,8 +99,8 @@ fun DictionaryScreen(viewModel: DictionaryViewModel, modifier: Modifier = Modifi
                     .width(40.dp)
                     .verticalScroll(rememberScrollState())
                     .navigationBarsPadding()
-                    .padding(vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                    .padding(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 dictionaryKeys.forEach { key ->
@@ -114,7 +114,7 @@ fun DictionaryScreen(viewModel: DictionaryViewModel, modifier: Modifier = Modifi
                                     }
                                 }
                             }
-                            .padding(vertical = 4.dp),
+                            .padding(vertical = 0.dp),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
