@@ -1,12 +1,13 @@
 package com.whoisbarry.koinedictionary.features.alphabet.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,24 +28,38 @@ fun AlphabetScreen(viewModel: AlphabetViewModel, modifier: Modifier = Modifier) 
             val letterLowercase = letter.toString().lowercase()
 
             AlphabetItem(
-                letter = "$letterUppercase $letterLowercase, $letterName",
+                uppercase = letterUppercase,
+                lowercase = letterLowercase,
+                name = letterName,
                 onClick = {
                     TextToSpeechService.speakText(letterName)
                 }
             )
-            HorizontalDivider()
         }
     }
 }
 
 @Composable
-fun AlphabetItem(letter: String, onClick: () -> Unit) {
-    Text(
-        text = letter,
-        style = MaterialTheme.typography.headlineMedium,
+fun AlphabetItem(uppercase: String, lowercase: String, name: String, onClick: () -> Unit) {
+    ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable(onClick = onClick)
-            .padding(16.dp)
-    )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = "$uppercase $lowercase",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = name,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
 }

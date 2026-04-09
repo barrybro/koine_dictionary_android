@@ -17,7 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -87,7 +87,6 @@ fun DictionaryScreen(viewModel: DictionaryViewModel, modifier: Modifier = Modifi
                     val entries = groupedEntries[key] ?: emptyList()
                     items(entries, key = { it.id }) { entry ->
                         DictionaryEntryRow(entry)
-                        HorizontalDivider()
                     }
                 }
             }
@@ -127,18 +126,24 @@ fun DictionaryScreen(viewModel: DictionaryViewModel, modifier: Modifier = Modifi
 
 @Composable
 fun DictionaryEntryRow(entry: DictionaryEntry) {
-    Column(
+    ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
-        Text(
-            text = entry.word,
-            style = MaterialTheme.typography.titleMedium
-        )
-        Text(
-            text = entry.gloss,
-            style = MaterialTheme.typography.bodyMedium
-        )
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = entry.word,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = entry.gloss,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
