@@ -9,12 +9,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.whoisbarry.koinedictionary.BuildConfig
 
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
     val updateInterval by viewModel.updateInterval.collectAsState()
 
     LaunchedEffect(Unit) {
@@ -28,6 +31,31 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier) 
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // About Group
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "About",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Text(
+                    text = "Pocket Greek Dictionary ${BuildConfig.VERSION_NAME}",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+//                Text(
+//                    text = "By me",
+//                    style = MaterialTheme.typography.bodyMedium,
+//                    color = MaterialTheme.colorScheme.onSurfaceVariant
+//                )
+            }
+        }
+
         // Widget Settings Group
         ElevatedCard(
             modifier = Modifier.fillMaxWidth()
@@ -76,7 +104,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier) 
             }
         }
 
-        // About Group
+        // Data Sources
         ElevatedCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -84,19 +112,32 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier) 
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "About",
+                    text = "Data Sources",
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 Text(
-                    text = "Pocket Greek Dictionary ${BuildConfig.VERSION_NAME}",
-                    style = MaterialTheme.typography.bodyLarge
+                    text = "New Testament Greek Vocabulary List",
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        textDecoration = TextDecoration.Underline,
+                        color = MaterialTheme.colorScheme.primary
+                    ),
+                    modifier = Modifier
+                        .clickable {
+                            uriHandler.openUri("https://www.theology.edu/Remata/Spreadsheet/index.html")
+                        }
+                        .padding(bottom = 16.dp)
                 )
                 Text(
-                    text = "By me",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "Dickinson Core Greek",
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        textDecoration = TextDecoration.Underline,
+                        color = MaterialTheme.colorScheme.primary
+                    ),
+                    modifier = Modifier.clickable {
+                        uriHandler.openUri("https://dcc.dickinson.edu/greek-core-list")
+                    }
                 )
             }
         }
