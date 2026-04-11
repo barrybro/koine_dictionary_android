@@ -1,13 +1,18 @@
 package com.whoisbarry.koinedictionary.features.dictionary.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -40,9 +45,56 @@ fun DictionaryEntryDetailScreen(entry: DictionaryEntry, onBack: () -> Unit) {
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            DictionaryEntryRow(entry)
+            DictionaryEntryDetailRow(entry)
+        }
+    }
+}
+
+@Composable
+fun DictionaryEntryDetailRow(entry: DictionaryEntry, onClick: () -> Unit = {}) {
+    ElevatedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable(onClick = onClick)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = entry.word,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = entry.gloss,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = entry.sourceName,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             
-            // Future features can be added here
+            Button(
+                onClick = { /* TODO: Implement share as image */ },
+                modifier = Modifier.padding(top = 8.dp)
+            ) {
+                Text("Share as image")
+            }
+            Button(
+                onClick = { /* TODO: Implement share as text */ },
+                modifier = Modifier.padding(top = 8.dp)
+            ) {
+                Text("Share as text")
+            }
+            Button(
+                onClick = { /* TODO: Implement speak */ },
+                modifier = Modifier.padding(top = 8.dp)
+            ) {
+                Text("Speak Entry")
+            }
         }
     }
 }
