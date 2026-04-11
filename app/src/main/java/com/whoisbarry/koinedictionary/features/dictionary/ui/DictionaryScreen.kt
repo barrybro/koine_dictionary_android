@@ -1,5 +1,6 @@
 package com.whoisbarry.koinedictionary.features.dictionary.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -25,8 +26,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -39,6 +42,18 @@ import kotlinx.coroutines.launch
 fun DictionaryScreen(viewModel: DictionaryViewModel, modifier: Modifier = Modifier) {
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    var selectedEntry by remember { mutableStateOf<DictionaryEntry?>(null) }
+
+    if (selectedEntry != null) {
+        BackHandler {
+            selectedEntry = null
+        }
+        DictionaryEntryDetailScreen(
+            entry = selectedEntry!!,
+            onBack = { selectedEntry = null }
+        )
+        return
+    }
 
     // Group the filtered entries by their keyLetter to maintain the alphabetical structure
     val groupedEntries = uiState.groupBy { it.keyLetter }
@@ -86,7 +101,10 @@ fun DictionaryScreen(viewModel: DictionaryViewModel, modifier: Modifier = Modifi
                     }
                     val entries = groupedEntries[key] ?: emptyList()
                     items(entries, key = { it.id }) { entry ->
-                        DictionaryEntryRow(entry)
+                        DictionaryEntryRow(
+                            entry = entry,
+                            onClick = { selectedEntry = entry }
+                        )
                     }
                 }
             }
@@ -125,11 +143,12 @@ fun DictionaryScreen(viewModel: DictionaryViewModel, modifier: Modifier = Modifi
 }
 
 @Composable
-fun DictionaryEntryRow(entry: DictionaryEntry) {
+fun DictionaryEntryRow(entry: DictionaryEntry, onClick: () -> Unit = {}) {
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable(onClick = onClick)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
