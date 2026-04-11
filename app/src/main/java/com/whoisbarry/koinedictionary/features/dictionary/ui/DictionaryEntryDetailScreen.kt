@@ -17,6 +17,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.whoisbarry.koinedictionary.data.models.DictionaryEntry
@@ -59,39 +60,51 @@ fun DictionaryEntryDetailRow(entry: DictionaryEntry, onClick: () -> Unit = {}) {
             .clickable(onClick = onClick)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
             Text(
                 text = entry.word,
                 style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(top = 8.dp)
             )
             Text(
                 text = entry.gloss,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp)
             )
             Text(
                 text = entry.sourceName,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .padding(top = 8.dp)
             )
-            
             Button(
                 onClick = { /* TODO: Implement share as image */ },
-                modifier = Modifier.padding(top = 8.dp)
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(top = 16.dp)
             ) {
                 Text("Share as image")
             }
             Button(
                 onClick = { /* TODO: Implement share as text */ },
-                modifier = Modifier.padding(top = 8.dp)
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(top = 8.dp)
             ) {
                 Text("Share as text")
             }
             Button(
                 onClick = { /* TODO: Implement speak */ },
-                modifier = Modifier.padding(top = 8.dp)
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(top = 8.dp)
             ) {
                 Text("Speak Entry")
             }
