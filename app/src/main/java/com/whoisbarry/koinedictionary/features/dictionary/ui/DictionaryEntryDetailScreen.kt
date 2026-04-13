@@ -1,5 +1,6 @@
 package com.whoisbarry.koinedictionary.features.dictionary.ui
 
+import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,6 +20,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.whoisbarry.koinedictionary.data.models.DictionaryEntry
 
@@ -53,6 +55,7 @@ fun DictionaryEntryDetailScreen(entry: DictionaryEntry, onBack: () -> Unit) {
 
 @Composable
 fun DictionaryEntryDetailRow(entry: DictionaryEntry, onClick: () -> Unit = {}) {
+    val context = LocalContext.current
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
@@ -93,7 +96,15 @@ fun DictionaryEntryDetailRow(entry: DictionaryEntry, onClick: () -> Unit = {}) {
                 Text("Share as image")
             }
             Button(
-                onClick = { /* TODO: Implement share as text */ },
+                onClick = {
+                    val sendIntent: Intent = Intent().apply {
+                        action = Intent.ACTION_SEND
+                        putExtra(Intent.EXTRA_TEXT, entry.shareText())
+                        type = "text/plain"
+                    }
+                    val shareIntent = Intent.createChooser(sendIntent, null)
+                    context.startActivity(shareIntent)
+                },
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
                     .padding(top = 8.dp)
