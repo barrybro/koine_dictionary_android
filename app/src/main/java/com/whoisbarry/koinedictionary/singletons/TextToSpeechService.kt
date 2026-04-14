@@ -23,6 +23,10 @@ object TextToSpeechService : TextToSpeech.OnInitListener {
         }
     }
 
+    fun canSpeak(): Boolean {
+        return isInitialized
+    }
+
     fun speakText(text: String) {
         if (isInitialized) {
             tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)

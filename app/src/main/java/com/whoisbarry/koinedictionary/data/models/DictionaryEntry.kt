@@ -11,4 +11,8 @@ data class DictionaryEntry(
     val sourceName: String,
     val type: String,
     val verbStem: String,
-)
+) {
+    fun shareText(): String {
+        return "$word - $gloss"
+    }
+}
