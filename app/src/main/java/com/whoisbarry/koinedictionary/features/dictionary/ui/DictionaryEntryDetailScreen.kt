@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.whoisbarry.koinedictionary.data.models.DictionaryEntry
+import com.whoisbarry.koinedictionary.singletons.TextToSpeechService
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,14 +88,14 @@ fun DictionaryEntryDetailRow(entry: DictionaryEntry, onClick: () -> Unit = {}) {
                     .align(Alignment.End)
                     .padding(top = 8.dp)
             )
-            Button(
-                onClick = { /* TODO: Implement share as image */ },
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(top = 16.dp)
-            ) {
-                Text("Share as image")
-            }
+//            Button(
+//                onClick = { /* TODO: Implement share as image */ },
+//                modifier = Modifier
+//                    .align(Alignment.CenterHorizontally)
+//                    .padding(top = 16.dp)
+//            ) {
+//                Text("Share as image")
+//            }
             Button(
                 onClick = {
                     val sendIntent: Intent = Intent().apply {
@@ -111,13 +112,17 @@ fun DictionaryEntryDetailRow(entry: DictionaryEntry, onClick: () -> Unit = {}) {
             ) {
                 Text("Share as text")
             }
-            Button(
-                onClick = { /* TODO: Implement speak */ },
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(top = 8.dp)
-            ) {
-                Text("Speak Entry")
+            if (TextToSpeechService.canSpeak()) {
+                Button(
+                    onClick = {
+                        TextToSpeechService.speakText(entry.word)
+                    },
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(top = 8.dp)
+                ) {
+                    Text("Speak Entry")
+                }
             }
         }
     }
