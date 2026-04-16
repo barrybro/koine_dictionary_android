@@ -17,6 +17,7 @@ object TextToSpeechService : TextToSpeech.OnInitListener {
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
             val result = tts?.setLanguage(Locale.forLanguageTag("el-GR"))
+            // TODO: See if we can fix TextToSpeech.LANG_NOT_SUPPORTED status which I'm seeing
             if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
                 isInitialized = true
             }
