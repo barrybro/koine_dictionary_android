@@ -5,12 +5,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -78,7 +78,7 @@ fun DictionaryScreen(viewModel: DictionaryViewModel, modifier: Modifier = Modifi
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            placeholder = { Text("Search Greek or English...") },
+            placeholder = { Text("Search in Greek or English") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             singleLine = true
         )
@@ -112,12 +112,11 @@ fun DictionaryScreen(viewModel: DictionaryViewModel, modifier: Modifier = Modifi
             // Alphabet Index
             Column(
                 modifier = Modifier
-                    .fillMaxHeight()
-                    .width(40.dp)
+                    .wrapContentHeight()
+                    .width(30.dp)
                     .verticalScroll(rememberScrollState())
-                    .navigationBarsPadding()
-                    .padding(vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(0.dp),
+                    .navigationBarsPadding(),
+                verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 dictionaryKeys.forEach { key ->
@@ -130,9 +129,8 @@ fun DictionaryScreen(viewModel: DictionaryViewModel, modifier: Modifier = Modifi
                                         listState.animateScrollToItem(index)
                                     }
                                 }
-                            }
-                            .padding(vertical = 0.dp),
-                        fontSize = 14.sp,
+                            },
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
