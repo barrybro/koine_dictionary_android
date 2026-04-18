@@ -56,12 +56,13 @@ class MainActivity : ComponentActivity() {
 fun MainScreen() {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Dictionary", "Alphabet", "Settings")
+    val topTitles = listOf("Ancient Greek Dictionary", "Greek Alphabet", "Settings")
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(text = tabs[selectedTabIndex]) }
+                title = { Text(text = topTitles[selectedTabIndex]) }
             )
         },
         bottomBar = {
