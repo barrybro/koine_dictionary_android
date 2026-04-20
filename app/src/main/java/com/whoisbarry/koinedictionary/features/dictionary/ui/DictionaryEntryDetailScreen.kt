@@ -84,24 +84,25 @@ fun DictionaryEntryDetailScreen(entry: DictionaryEntry, onBack: () -> Unit) {
                 DictionaryEntryDetailRow(entry)
             }
 
-            Button(
-                onClick = {
-                    coroutineScope.launch {
-                        val bitmap = captureView(view, rowBounds)
-                        if (bitmap != null) {
-                            val uri = saveBitmapAndGetUri(context, bitmap)
-                            if (uri != null) {
-                                shareImage(context, uri)
-                            }
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(top = 16.dp)
-            ) {
-                Text("Share as image")
-            }
+            // TODO: Troubleshoot share as image, doesn't work
+//            Button(
+//                onClick = {
+//                    coroutineScope.launch {
+//                        val bitmap = captureView(view, rowBounds)
+//                        if (bitmap != null) {
+//                            val uri = saveBitmapAndGetUri(context, bitmap)
+//                            if (uri != null) {
+//                                shareImage(context, uri)
+//                            }
+//                        }
+//                    }
+//                },
+//                modifier = Modifier
+//                    .align(Alignment.CenterHorizontally)
+//                    .padding(top = 16.dp)
+//            ) {
+//                Text("Share as image")
+//            }
 
             Button(
                 onClick = {
