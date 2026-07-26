@@ -1,49 +1,53 @@
 package com.whoisbarry.pocketgreekdictionary.features.widget
 
 import android.content.Context
+import android.widget.RemoteViews
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
+import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
+import androidx.glance.appwidget.AndroidRemoteViews
 import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.provideContent
-import androidx.glance.appwidget.updateAll
+import androidx.glance.appwidget.state.getAppWidgetState
+import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.background
 import androidx.glance.color.ColorProvider
 import androidx.glance.layout.Alignment
-import androidx.glance.layout.Column
-import androidx.glance.layout.Spacer
+import androidx.glance.layout.Box
 import androidx.glance.layout.fillMaxSize
-import androidx.glance.layout.height
 import androidx.glance.layout.padding
+import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.work.*
 import com.whoisbarry.pocketgreekdictionary.MainActivity
+import com.whoisbarry.pocketgreekdictionary.R
 import com.whoisbarry.pocketgreekdictionary.data.models.DictionaryEntry
 import com.whoisbarry.pocketgreekdictionary.singletons.DictionaryService
 import java.util.concurrent.TimeUnit
-import kotlin.math.ceil
 
 class DictionaryWidget : GlanceAppWidget() {
 
-    // Required to read the widget's real current size via LocalSize, since this widget is
-    // user-resizable and a single fixed layout (the default SizeMode.Single) would always
-    // report the minWidth/minHeight from dictionary_widget_info.xml instead.
-    override val sizeMode: SizeMode = SizeMode.Exact
+    // Fitting the text is the layout's job: the TextViews autosize themselves (see
+    // res/layout/widget_dictionary_entry.xml). Size is only consulted to decide how much of a
+    // long gloss to offer, so two buckets are enough — no per-pixel recomposition needed.
+    override val sizeMode: SizeMode = SizeMode.Responsive(setOf(SMALL_SIZE, LARGE_SIZE))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val entry = DictionaryService.getRandomEntry(context)
+        val entry = currentEntry(context, id)
 
         provideContent {
             GlanceTheme {
@@ -54,70 +58,25 @@ class DictionaryWidget : GlanceAppWidget() {
 
     @Composable
     private fun DictionaryWidgetContent(entry: DictionaryEntry?) {
+        val context = LocalContext.current
+        val isSmall = LocalSize.current.width < LARGE_SIZE.width
         val backgroundColor = ColorProvider(
             day = Color(0xCCFFFFFF),
             night = Color(0xCC000000)
         )
-        val padding = 16.dp
-        val spacerHeight = 8.dp
-        val size = LocalSize.current
-        val contentWidth = (size.width - padding * 2).coerceAtLeast(40.dp)
-        val contentHeight = (size.height - padding * 2).coerceAtLeast(24.dp)
 
-        Column(
+        Box(
             modifier = GlanceModifier
                 .fillMaxSize()
                 .background(backgroundColor)
-                .padding(padding)
+                .padding(WIDGET_PADDING_DP.dp)
                 .clickable(actionStartActivity<MainActivity>()),
-            verticalAlignment = Alignment.Top,
-            horizontalAlignment = Alignment.Start
+            contentAlignment = Alignment.Center
         ) {
             if (entry != null) {
-                val wordFontSizeSp = fitFontSizeSp(
-                    text = entry.word,
-                    availableWidth = contentWidth,
-                    availableHeight = contentHeight,
-                    minSp = MIN_WORD_FONT_SP,
-                    maxSp = MAX_WORD_FONT_SP,
-                    charWidthFactor = WORD_CHAR_WIDTH_FACTOR,
-                    maxLines = 1
-                )
-                val wordHeight = (wordFontSizeSp * LINE_HEIGHT_FACTOR).dp
-                val glossAvailableHeight =
-                    (contentHeight - wordHeight - spacerHeight).coerceAtLeast(16.dp)
-                val glossFontSizeSp = fitFontSizeSp(
-                    text = entry.gloss,
-                    availableWidth = contentWidth,
-                    availableHeight = glossAvailableHeight,
-                    minSp = MIN_GLOSS_FONT_SP,
-                    maxSp = MAX_GLOSS_FONT_SP,
-                    charWidthFactor = GLOSS_CHAR_WIDTH_FACTOR
-                )
-                val glossMaxLines = linesNeededFor(
-                    text = entry.gloss,
-                    availableWidth = contentWidth,
-                    fontSizeSp = glossFontSizeSp,
-                    charWidthFactor = GLOSS_CHAR_WIDTH_FACTOR
-                )
-
-                Text(
-                    text = entry.word,
-                    style = TextStyle(
-                        color = GlanceTheme.colors.onSurface,
-                        fontSize = wordFontSizeSp.sp,
-                        fontWeight = FontWeight.Bold
-                    ),
-                    maxLines = 1
-                )
-                Spacer(modifier = GlanceModifier.height(spacerHeight))
-                Text(
-                    text = entry.gloss,
-                    style = TextStyle(
-                        color = GlanceTheme.colors.onSurfaceVariant,
-                        fontSize = glossFontSizeSp.sp
-                    ),
-                    maxLines = glossMaxLines
+                AndroidRemoteViews(
+                    remoteViews = entryRemoteViews(context, entry, isSmall),
+                    modifier = GlanceModifier.fillMaxSize()
                 )
             } else {
                 Text(
@@ -130,58 +89,63 @@ class DictionaryWidget : GlanceAppWidget() {
             }
         }
     }
-}
 
-private const val MIN_WORD_FONT_SP = 10f
-private const val MAX_WORD_FONT_SP = 26f
-private const val MIN_GLOSS_FONT_SP = 8f
-private const val MAX_GLOSS_FONT_SP = 18f
+    companion object {
+        private val ENTRY_ID_KEY = intPreferencesKey("widget_entry_id")
 
-// RemoteViews can't measure text directly, so wrapping is estimated from character count using
-// an average glyph width as a fraction of font size. Bold (word) glyphs are wider than regular
-// (gloss) ones, hence the separate factors.
-private const val WORD_CHAR_WIDTH_FACTOR = 0.62f
-private const val GLOSS_CHAR_WIDTH_FACTOR = 0.52f
-private const val LINE_HEIGHT_FACTOR = 1.3f
-
-/**
- * Largest font size in [minSp, maxSp] for which [text] is estimated to wrap into at most
- * [maxLines] lines within [availableWidth] x [availableHeight].
- */
-private fun fitFontSizeSp(
-    text: String,
-    availableWidth: Dp,
-    availableHeight: Dp,
-    minSp: Float,
-    maxSp: Float,
-    charWidthFactor: Float,
-    maxLines: Int = Int.MAX_VALUE
-): Float {
-    if (text.isEmpty()) return maxSp
-
-    var fontSize = maxSp
-    while (fontSize > minSp) {
-        val lines = linesNeededFor(text, availableWidth, fontSize, charWidthFactor)
-        val neededHeight = lines * fontSize * LINE_HEIGHT_FACTOR
-        if (lines <= maxLines && neededHeight <= availableHeight.value) {
-            return fontSize
+        /**
+         * Draws a new random entry on every placed widget. Redraws triggered by anything else
+         * (resize, reboot, host refresh) keep showing the stored entry, so the word only changes
+         * when a refresh is actually intended.
+         */
+        suspend fun refreshAll(context: Context) {
+            val widget = DictionaryWidget()
+            GlanceAppWidgetManager(context)
+                .getGlanceIds(DictionaryWidget::class.java)
+                .forEach { glanceId ->
+                    val entry = DictionaryService.getRandomEntry(context)
+                    if (entry != null) {
+                        updateAppWidgetState(context, glanceId) { prefs ->
+                            prefs[ENTRY_ID_KEY] = entry.id
+                        }
+                    }
+                    widget.update(context, glanceId)
+                }
         }
-        fontSize -= 1f
+
+        private suspend fun currentEntry(context: Context, id: GlanceId): DictionaryEntry? {
+            val storedId = runCatching {
+                getAppWidgetState(context, PreferencesGlanceStateDefinition, id)[ENTRY_ID_KEY]
+            }.getOrNull()
+
+            storedId?.let { DictionaryService.getEntryById(context, it) }?.let { return it }
+
+            val entry = DictionaryService.getRandomEntry(context) ?: return null
+            runCatching {
+                updateAppWidgetState(context, id) { prefs -> prefs[ENTRY_ID_KEY] = entry.id }
+            }
+            return entry
+        }
     }
-    return minSp
 }
 
-private fun linesNeededFor(
-    text: String,
-    availableWidth: Dp,
-    fontSizeSp: Float,
-    charWidthFactor: Float
-): Int {
-    val charsPerLine = (availableWidth.value / (fontSizeSp * charWidthFactor))
-        .toInt()
-        .coerceAtLeast(1)
-    return ceil(text.length / charsPerLine.toFloat()).toInt().coerceAtLeast(1)
-}
+internal const val WIDGET_PADDING_DP = 12
+
+/** Smallest placement the widget allows, matching dictionary_widget_info.xml. */
+internal val SMALL_SIZE = DpSize(110.dp, 70.dp)
+
+/** Anything at least this wide gets the full gloss rather than just its first sense. */
+internal val LARGE_SIZE = DpSize(180.dp, 110.dp)
+
+internal fun entryRemoteViews(
+    context: Context,
+    entry: DictionaryEntry,
+    isSmall: Boolean
+): RemoteViews =
+    RemoteViews(context.packageName, R.layout.widget_dictionary_entry).apply {
+        setTextViewText(R.id.widget_word, entry.headword)
+        setTextViewText(R.id.widget_gloss, if (isSmall) entry.primaryGloss else entry.gloss)
+    }
 
 class DictionaryWidgetWorker(
     private val context: Context,
@@ -189,7 +153,7 @@ class DictionaryWidgetWorker(
 ) : CoroutineWorker(context, workerParameters) {
 
     override suspend fun doWork(): Result {
-        DictionaryWidget().updateAll(context)
+        DictionaryWidget.refreshAll(context)
         return Result.success()
     }
 
@@ -203,7 +167,7 @@ class DictionaryWidgetWorker(
 
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                 WORK_NAME,
-                ExistingPeriodicWorkPolicy.REPLACE,
+                ExistingPeriodicWorkPolicy.UPDATE,
                 request
             )
         }

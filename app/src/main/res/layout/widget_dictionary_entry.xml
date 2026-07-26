@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  Text fitting for the home screen widget is delegated to the framework's TextView autosizing:
+  both views measure the real glyphs at the user's font scale and shrink until the whole string
+  fits the space the widget was resized to. Heights are weighted (never wrap_content) because
+  autosizing needs a bounded height to size against.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/widget_word"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:autoSizeMaxTextSize="40sp"
+        android:autoSizeMinTextSize="11sp"
+        android:autoSizeStepGranularity="1sp"
+        android:autoSizeTextType="uniform"
+        android:ellipsize="end"
+        android:gravity="bottom|start"
+        android:maxLines="1"
+        android:textColor="@color/widget_text_primary"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widget_gloss"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="2"
+        android:autoSizeMaxTextSize="24sp"
+        android:autoSizeMinTextSize="8sp"
+        android:autoSizeStepGranularity="1sp"
+        android:autoSizeTextType="uniform"
+        android:ellipsize="end"
+        android:gravity="top|start"
+        android:lineSpacingMultiplier="1.1"
+        android:paddingTop="4dp"
+        android:textColor="@color/widget_text_secondary" />
+
+</LinearLayout>

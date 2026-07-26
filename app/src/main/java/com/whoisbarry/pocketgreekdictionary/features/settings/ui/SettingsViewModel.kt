@@ -30,9 +30,9 @@ class SettingsViewModel : ViewModel() {
         // Update the WorkManager job with the new interval
         DictionaryWidgetWorker.enqueue(context, hours)
 
-        // Trigger an immediate widget update
+        // Trigger an immediate widget refresh
         MainScope().launch {
-            DictionaryWidget().updateAll(context)
+            DictionaryWidget.refreshAll(context)
         }
     }
 }

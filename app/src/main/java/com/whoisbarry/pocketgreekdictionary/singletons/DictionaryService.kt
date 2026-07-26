@@ -83,6 +83,19 @@ object DictionaryService {
         }
     }
 
+    /**
+     * Retrieves the entry with the given id, or null if it no longer exists.
+     */
+    fun getEntryById(context: Context, id: Int): DictionaryEntry? {
+        val db = getDatabase(context)
+        return db.rawQuery(
+            "SELECT * FROM greekDictionaryEntry WHERE id = ? LIMIT 1",
+            arrayOf(id.toString())
+        ).use { cursor ->
+            mapCursorToEntries(cursor).firstOrNull()
+        }
+    }
+
     private fun mapCursorToEntries(cursor: Cursor): List<DictionaryEntry> {
         val entries = mutableListOf<DictionaryEntry>()
         val idIndex = cursor.getColumnIndex("id")
