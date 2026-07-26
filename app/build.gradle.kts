@@ -4,14 +4,14 @@ plugins {
 }
 
 android {
-    namespace = "com.whoisbarry.koinedictionary"
+    namespace = "com.whoisbarry.pocketgreekdictionary"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.whoisbarry.koinedictionary"
+        applicationId = "com.whoisbarry.pocketgreekdictionary"
         minSdk = 29
         targetSdk = 36
-        versionCode = 1
+        versionCode = 2
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

@@ -8,4 +8,6 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="widget_background">#CCFFFFFF</color>
+    <color name="widget_text_primary">#FF1B1B1F</color>
+    <color name="widget_text_secondary">#FF49454F</color>
 </resources>
