@@ -3,15 +3,18 @@ package com.whoisbarry.pocketgreekdictionary.features.widget
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
+import androidx.glance.LocalSize
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.updateAll
 import androidx.glance.background
@@ -30,8 +33,14 @@ import com.whoisbarry.pocketgreekdictionary.MainActivity
 import com.whoisbarry.pocketgreekdictionary.data.models.DictionaryEntry
 import com.whoisbarry.pocketgreekdictionary.singletons.DictionaryService
 import java.util.concurrent.TimeUnit
+import kotlin.math.ceil
 
 class DictionaryWidget : GlanceAppWidget() {
+
+    // Required to read the widget's real current size via LocalSize, since this widget is
+    // user-resizable and a single fixed layout (the default SizeMode.Single) would always
+    // report the minWidth/minHeight from dictionary_widget_info.xml instead.
+    override val sizeMode: SizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val entry = DictionaryService.getRandomEntry(context)
@@ -49,58 +58,66 @@ class DictionaryWidget : GlanceAppWidget() {
             day = Color(0xCCFFFFFF),
             night = Color(0xCC000000)
         )
+        val padding = 16.dp
+        val spacerHeight = 8.dp
+        val size = LocalSize.current
+        val contentWidth = (size.width - padding * 2).coerceAtLeast(40.dp)
+        val contentHeight = (size.height - padding * 2).coerceAtLeast(24.dp)
 
         Column(
             modifier = GlanceModifier
                 .fillMaxSize()
                 .background(backgroundColor)
-                .padding(16.dp)
+                .padding(padding)
                 .clickable(actionStartActivity<MainActivity>()),
             verticalAlignment = Alignment.Top,
             horizontalAlignment = Alignment.Start
         ) {
             if (entry != null) {
-                // Dynamic font size for the word based on its length
-                val wordFontSize = when {
-                    entry.word.length > 40 -> 6.sp
-                    entry.word.length > 25 -> 12.sp
-                    entry.word.length > 20 -> 14.sp
-                    entry.word.length > 15 -> 18.sp
-                    entry.word.length > 10 -> 20.sp
-                    else -> 24.sp
-                }
-
-                // Dynamic font size for the gloss based on its length
-                val glossFontSize = when {
-                    entry.gloss.length > 400 -> 6.sp
-                    entry.gloss.length > 300 -> 7.sp
-                    entry.gloss.length > 250 -> 8.sp
-                    entry.gloss.length > 200 -> 9.sp
-                    entry.gloss.length > 150 -> 10.sp
-                    entry.gloss.length > 100 -> 11.sp
-                    entry.gloss.length > 70 -> 12.sp
-                    entry.gloss.length > 50 -> 14.sp
-                    entry.gloss.length > 30 -> 16.sp
-                    else -> 18.sp
-                }
+                val wordFontSizeSp = fitFontSizeSp(
+                    text = entry.word,
+                    availableWidth = contentWidth,
+                    availableHeight = contentHeight,
+                    minSp = MIN_WORD_FONT_SP,
+                    maxSp = MAX_WORD_FONT_SP,
+                    charWidthFactor = WORD_CHAR_WIDTH_FACTOR,
+                    maxLines = 1
+                )
+                val wordHeight = (wordFontSizeSp * LINE_HEIGHT_FACTOR).dp
+                val glossAvailableHeight =
+                    (contentHeight - wordHeight - spacerHeight).coerceAtLeast(16.dp)
+                val glossFontSizeSp = fitFontSizeSp(
+                    text = entry.gloss,
+                    availableWidth = contentWidth,
+                    availableHeight = glossAvailableHeight,
+                    minSp = MIN_GLOSS_FONT_SP,
+                    maxSp = MAX_GLOSS_FONT_SP,
+                    charWidthFactor = GLOSS_CHAR_WIDTH_FACTOR
+                )
+                val glossMaxLines = linesNeededFor(
+                    text = entry.gloss,
+                    availableWidth = contentWidth,
+                    fontSizeSp = glossFontSizeSp,
+                    charWidthFactor = GLOSS_CHAR_WIDTH_FACTOR
+                )
 
                 Text(
                     text = entry.word,
                     style = TextStyle(
                         color = GlanceTheme.colors.onSurface,
-                        fontSize = wordFontSize,
+                        fontSize = wordFontSizeSp.sp,
                         fontWeight = FontWeight.Bold
                     ),
                     maxLines = 1
                 )
-                Spacer(modifier = GlanceModifier.height(8.dp))
+                Spacer(modifier = GlanceModifier.height(spacerHeight))
                 Text(
                     text = entry.gloss,
                     style = TextStyle(
                         color = GlanceTheme.colors.onSurfaceVariant,
-                        fontSize = glossFontSize
+                        fontSize = glossFontSizeSp.sp
                     ),
-                    maxLines = 12
+                    maxLines = glossMaxLines
                 )
             } else {
                 Text(
@@ -113,6 +130,57 @@ class DictionaryWidget : GlanceAppWidget() {
             }
         }
     }
+}
+
+private const val MIN_WORD_FONT_SP = 10f
+private const val MAX_WORD_FONT_SP = 26f
+private const val MIN_GLOSS_FONT_SP = 8f
+private const val MAX_GLOSS_FONT_SP = 18f
+
+// RemoteViews can't measure text directly, so wrapping is estimated from character count using
+// an average glyph width as a fraction of font size. Bold (word) glyphs are wider than regular
+// (gloss) ones, hence the separate factors.
+private const val WORD_CHAR_WIDTH_FACTOR = 0.62f
+private const val GLOSS_CHAR_WIDTH_FACTOR = 0.52f
+private const val LINE_HEIGHT_FACTOR = 1.3f
+
+/**
+ * Largest font size in [minSp, maxSp] for which [text] is estimated to wrap into at most
+ * [maxLines] lines within [availableWidth] x [availableHeight].
+ */
+private fun fitFontSizeSp(
+    text: String,
+    availableWidth: Dp,
+    availableHeight: Dp,
+    minSp: Float,
+    maxSp: Float,
+    charWidthFactor: Float,
+    maxLines: Int = Int.MAX_VALUE
+): Float {
+    if (text.isEmpty()) return maxSp
+
+    var fontSize = maxSp
+    while (fontSize > minSp) {
+        val lines = linesNeededFor(text, availableWidth, fontSize, charWidthFactor)
+        val neededHeight = lines * fontSize * LINE_HEIGHT_FACTOR
+        if (lines <= maxLines && neededHeight <= availableHeight.value) {
+            return fontSize
+        }
+        fontSize -= 1f
+    }
+    return minSp
+}
+
+private fun linesNeededFor(
+    text: String,
+    availableWidth: Dp,
+    fontSizeSp: Float,
+    charWidthFactor: Float
+): Int {
+    val charsPerLine = (availableWidth.value / (fontSizeSp * charWidthFactor))
+        .toInt()
+        .coerceAtLeast(1)
+    return ceil(text.length / charsPerLine.toFloat()).toInt().coerceAtLeast(1)
 }
 
 class DictionaryWidgetWorker(

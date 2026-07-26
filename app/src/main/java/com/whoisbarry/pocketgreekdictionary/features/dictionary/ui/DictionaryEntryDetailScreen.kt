@@ -1,16 +1,18 @@
 package com.whoisbarry.pocketgreekdictionary.features.dictionary.ui
 
+import android.content.ClipData
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.net.Uri
-import android.view.View
+import android.widget.Toast
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -30,16 +32,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.layout.boundsInRoot
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import com.whoisbarry.pocketgreekdictionary.data.models.DictionaryEntry
 import com.whoisbarry.pocketgreekdictionary.singletons.TextToSpeechService
+import com.whoisbarry.pocketgreekdictionary.util.renderEntryImage
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
@@ -48,9 +48,9 @@ import java.io.FileOutputStream
 @Composable
 fun DictionaryEntryDetailScreen(entry: DictionaryEntry, onBack: () -> Unit) {
     val context = LocalContext.current
-    val view = LocalView.current
     val coroutineScope = rememberCoroutineScope()
-    var rowBounds by remember { mutableStateOf<Rect?>(null) }
+    val scrollState = rememberScrollState()
+    var isSharingImage by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -71,37 +71,37 @@ fun DictionaryEntryDetailScreen(entry: DictionaryEntry, onBack: () -> Unit) {
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
+                .verticalScroll(scrollState)
                 .padding(16.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .onGloballyPositioned {
-                        rowBounds = it.boundsInRoot()
-                    }
-            ) {
-                DictionaryEntryDetailRow(entry)
-            }
+            DictionaryEntryDetailRow(entry)
 
-            // TODO: Troubleshoot share as image, doesn't work
-//            Button(
-//                onClick = {
-//                    coroutineScope.launch {
-//                        val bitmap = captureView(view, rowBounds)
-//                        if (bitmap != null) {
-//                            val uri = saveBitmapAndGetUri(context, bitmap)
-//                            if (uri != null) {
-//                                shareImage(context, uri)
-//                            }
-//                        }
-//                    }
-//                },
-//                modifier = Modifier
-//                    .align(Alignment.CenterHorizontally)
-//                    .padding(top = 16.dp)
-//            ) {
-//                Text("Share as image")
-//            }
+            Button(
+                enabled = !isSharingImage,
+                onClick = {
+                    isSharingImage = true
+                    coroutineScope.launch {
+                        val uri = withContext(Dispatchers.IO) {
+                            saveBitmapAndGetUri(context, renderEntryImage(context, entry), entry.id)
+                        }
+                        isSharingImage = false
+                        if (uri != null) {
+                            shareImage(context, uri, entry.shareText())
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "Couldn't create the image to share",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(top = 16.dp)
+            ) {
+                Text("Share as image")
+            }
 
             Button(
                 onClick = {
@@ -136,53 +136,30 @@ fun DictionaryEntryDetailScreen(entry: DictionaryEntry, onBack: () -> Unit) {
     }
 }
 
-private suspend fun captureView(view: View, bounds: Rect?): Bitmap? {
-    return withContext(Dispatchers.Main) {
-        try {
-            val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
-            val canvas = Canvas(bitmap)
-            view.draw(canvas)
-            if (bounds != null) {
-                val left = bounds.left.toInt().coerceAtLeast(0)
-                val top = bounds.top.toInt().coerceAtLeast(0)
-                val width = bounds.width.toInt().coerceAtMost(bitmap.width - left)
-                val height = bounds.height.toInt().coerceAtMost(bitmap.height - top)
-                if (width > 0 && height > 0) {
-                    Bitmap.createBitmap(bitmap, left, top, width, height)
-                } else {
-                    bitmap
-                }
-            } else {
-                bitmap
-            }
-        } catch (e: Exception) {
-            null
-        }
-    }
-}
-
-private suspend fun saveBitmapAndGetUri(context: android.content.Context, bitmap: Bitmap): Uri? {
-    return withContext(Dispatchers.IO) {
-        try {
-            val imagesFolder = File(context.cacheDir, "images")
-            imagesFolder.mkdirs()
-            val file = File(imagesFolder, "shared_entry.png")
-            val stream = FileOutputStream(file)
+private fun saveBitmapAndGetUri(context: Context, bitmap: Bitmap, entryId: Int): Uri? {
+    return try {
+        val imagesFolder = File(context.cacheDir, "images")
+        imagesFolder.mkdirs()
+        val file = File(imagesFolder, "entry_$entryId.png")
+        FileOutputStream(file).use { stream ->
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
-            stream.flush()
-            stream.close()
-            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-        } catch (e: Exception) {
-            null
         }
+        FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    } catch (e: Exception) {
+        null
+    } finally {
+        bitmap.recycle()
     }
 }
 
-private fun shareImage(context: android.content.Context, uri: Uri) {
+private fun shareImage(context: Context, uri: Uri, caption: String) {
     val intent = Intent(Intent.ACTION_SEND).apply {
-        putExtra(Intent.EXTRA_STREAM, uri)
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         type = "image/png"
+        putExtra(Intent.EXTRA_STREAM, uri)
+        putExtra(Intent.EXTRA_TEXT, caption)
+        // Some targets read the URI from the clip data rather than the extra.
+        clipData = ClipData.newUri(context.contentResolver, caption, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     context.startActivity(Intent.createChooser(intent, "Share Entry"))
 }
