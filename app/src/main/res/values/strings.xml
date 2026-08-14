@@ -3,4 +3,6 @@
     <string name="widget_description">Shows a random Greek dictionary entry.</string>
     <string name="widget_preview_word" translatable="false">λόγος</string>
     <string name="widget_preview_gloss" translatable="false">word, statement, message</string>
+    <string name="notification_channel_name">Dictionary entry</string>
+    <string name="notification_channel_description">A random dictionary entry, delivered on the schedule you choose.</string>
 </resources>

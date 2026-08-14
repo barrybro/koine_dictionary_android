@@ -23,6 +23,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 features/
   alphabet/ui/     # AlphabetScreen, AlphabetViewModel
   dictionary/ui/   # DictionaryScreen, DictionaryViewModel, DictionaryEntryDetailScreen
+  notification/    # DailyEntryNotification, DailyEntryNotificationWorker
   settings/ui/     # SettingsScreen, SettingsViewModel
   widget/          # DictionaryWidget (Glance), DictionaryWidgetWorker, DictionaryWidgetReceiver
 data/models/       # DictionaryEntry data class
@@ -45,6 +46,10 @@ assets/pocketGreekEntries.sqlite
 ### Widget
 
 `DictionaryWidget` (Glance) shows a random dictionary entry. `DictionaryWidgetWorker` (WorkManager `CoroutineWorker`) handles periodic refresh. Call `DictionaryWidget.updateAll(context)` for immediate refresh and `DictionaryWidgetWorker.enqueue(context, intervalHours)` for scheduled updates.
+
+### Entry Notification
+
+Separate from the widget: `DailyEntryNotification.showRandomEntry(context)` posts a random entry, and `DailyEntryNotificationWorker.enqueue(context, intervalHours)` / `.cancel(context)` drive the schedule (SharedPreferences key `notification_interval`, `0` = off, first notification delayed by one full interval). Requires `POST_NOTIFICATIONS`; check `DailyEntryNotification.areNotificationsAllowed(context)` before enabling it.
 
 ### Database Schema
 
