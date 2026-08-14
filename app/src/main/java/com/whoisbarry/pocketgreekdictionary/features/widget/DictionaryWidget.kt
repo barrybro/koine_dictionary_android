@@ -19,6 +19,7 @@ import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
+import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.state.updateAppWidgetState
@@ -65,12 +66,19 @@ class DictionaryWidget : GlanceAppWidget() {
             night = Color(0xCC000000)
         )
 
+        // Tapping the widget opens the word it is showing; with nothing to show, the app itself.
+        val openAction = if (entry != null) {
+            actionStartActivity(MainActivity.entryIntent(context, entry.id))
+        } else {
+            actionStartActivity<MainActivity>()
+        }
+
         Box(
             modifier = GlanceModifier
                 .fillMaxSize()
                 .background(backgroundColor)
                 .padding(WIDGET_PADDING_DP.dp)
-                .clickable(actionStartActivity<MainActivity>()),
+                .clickable(openAction),
             contentAlignment = Alignment.Center
         ) {
             if (entry != null) {

@@ -21,6 +21,10 @@ class DictionaryViewModel(application: Application) : AndroidViewModel(applicati
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
+    /** The entry whose detail view is open, or null while the list is showing. */
+    private val _selectedEntry = MutableStateFlow<DictionaryEntry?>(null)
+    val selectedEntry: StateFlow<DictionaryEntry?> = _selectedEntry.asStateFlow()
+
     val uiState: StateFlow<List<DictionaryEntry>> = combine(_allEntries, _searchQuery) { entries, query ->
         if (query.isBlank()) {
             entries
@@ -42,5 +46,20 @@ class DictionaryViewModel(application: Application) : AndroidViewModel(applicati
 
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query.withoutDiacritics
+    }
+
+    fun selectEntry(entry: DictionaryEntry?) {
+        _selectedEntry.value = entry
+    }
+
+    /**
+     * Opens the entry with [id] — the entry a widget or notification was tapped on. Reads it
+     * straight from the database rather than [uiState], which is still loading right after a
+     * cold start and is narrowed by any active search.
+     */
+    fun selectEntryById(id: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _selectedEntry.value = DictionaryService.getEntryById(getApplication(), id)
+        }
     }
 }
