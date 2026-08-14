@@ -26,10 +26,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -42,15 +40,15 @@ import kotlinx.coroutines.launch
 fun DictionaryScreen(viewModel: DictionaryViewModel, modifier: Modifier = Modifier) {
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
-    var selectedEntry by remember { mutableStateOf<DictionaryEntry?>(null) }
+    val selectedEntry by viewModel.selectedEntry.collectAsState()
 
     if (selectedEntry != null) {
         BackHandler {
-            selectedEntry = null
+            viewModel.selectEntry(null)
         }
         DictionaryEntryDetailScreen(
             entry = selectedEntry!!,
-            onBack = { selectedEntry = null }
+            onBack = { viewModel.selectEntry(null) }
         )
         return
     }
@@ -103,7 +101,7 @@ fun DictionaryScreen(viewModel: DictionaryViewModel, modifier: Modifier = Modifi
                     items(entries, key = { it.id }) { entry ->
                         DictionaryEntryRow(
                             entry = entry,
-                            onClick = { selectedEntry = entry }
+                            onClick = { viewModel.selectEntry(entry) }
                         )
                     }
                 }

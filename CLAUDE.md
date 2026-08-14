@@ -51,6 +51,10 @@ assets/pocketGreekEntries.sqlite
 
 Separate from the widget: `DailyEntryNotification.showRandomEntry(context)` posts a random entry, and `DailyEntryNotificationWorker.enqueue(context, intervalHours)` / `.cancel(context)` drive the schedule (SharedPreferences key `notification_interval`, `0` = off, first notification delayed by one full interval). Requires `POST_NOTIFICATIONS`; check `DailyEntryNotification.areNotificationsAllowed(context)` before enabling it.
 
+### Opening an Entry from Outside the App
+
+`MainActivity.entryIntent(context, entryId)` builds the intent used by both the widget tap and the notification tap. `MainActivity` is `launchMode="singleTask"` so a tap while the app is already running is routed to the running instance as `onNewIntent` instead of merely bringing the task to the front — don't drop that without re-testing a widget tap with the app in the background. `MainActivity` reads the id (clearing it so recreation doesn't reopen it), `MainScreen` switches to the Dictionary tab and calls `DictionaryViewModel.selectEntryById(id)`, and `DictionaryScreen` renders `DictionaryEntryDetailScreen` — the same view a list tap opens. Entry selection lives in `DictionaryViewModel.selectedEntry`, not in screen-local state.
+
 ### Database Schema
 
 Table `greekDictionaryEntry`: `id`, `difficulty`, `frequency`, `word`, `fullWord`, `gloss`, `keyLetter`, `sourceName`, `type`, `verbStem`
