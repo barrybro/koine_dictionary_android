@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.whoisbarry.pocketgreekdictionary"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.whoisbarry.pocketgreekdictionary"
