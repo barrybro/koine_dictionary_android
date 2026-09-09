@@ -9,14 +9,17 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.whoisbarry.pocketgreekdictionary.BuildConfig
@@ -28,6 +31,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier) 
     val uriHandler = LocalUriHandler.current
     val updateInterval by viewModel.updateInterval.collectAsState()
     val notificationInterval by viewModel.notificationInterval.collectAsState()
+    val accentColor by viewModel.accentColor.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.loadSettings(context)
@@ -37,6 +41,18 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier) 
     // the user answers it.
     var pendingNotificationInterval by remember { mutableStateOf<Int?>(null) }
     var notificationsBlocked by remember { mutableStateOf(false) }
+    var showAccentColorPicker by remember { mutableStateOf(false) }
+
+    if (showAccentColorPicker) {
+        AccentColorPickerDialog(
+            initialColor = accentColor,
+            onConfirm = { color ->
+                viewModel.setAccentColor(context, color)
+                showAccentColorPicker = false
+            },
+            onDismiss = { showAccentColorPicker = false }
+        )
+    }
 
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -101,6 +117,65 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier) 
 //                    style = MaterialTheme.typography.bodyMedium,
 //                    color = MaterialTheme.colorScheme.onSurfaceVariant
 //                )
+            }
+        }
+
+        // Accent Color Group
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Accent Color",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                Text(
+                    text = "Used for headings, entry words, the alphabet index and the tab bar.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable { showAccentColorPicker = true }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    ColorSwatch(color = accentColor, modifier = Modifier.size(44.dp))
+
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = 16.dp)
+                    ) {
+                        Text(
+                            text = accentColor.toHexString(),
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Tap to choose a colour",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                TextButton(
+                    onClick = { viewModel.resetAccentColor(context) },
+                    enabled = accentColor != viewModel.defaultAccentColor,
+                    modifier = Modifier.padding(top = 4.dp)
+                ) {
+                    Text(text = "Reset to default")
+                }
             }
         }
 

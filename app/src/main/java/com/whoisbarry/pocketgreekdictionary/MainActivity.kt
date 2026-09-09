@@ -34,6 +34,7 @@ import com.whoisbarry.pocketgreekdictionary.features.alphabet.ui.AlphabetScreen
 import com.whoisbarry.pocketgreekdictionary.features.dictionary.ui.DictionaryScreen
 import com.whoisbarry.pocketgreekdictionary.features.dictionary.ui.DictionaryViewModel
 import com.whoisbarry.pocketgreekdictionary.features.settings.ui.SettingsScreen
+import com.whoisbarry.pocketgreekdictionary.singletons.AccentColorService
 import com.whoisbarry.pocketgreekdictionary.singletons.DictionaryService
 import com.whoisbarry.pocketgreekdictionary.singletons.TextToSpeechService
 import com.whoisbarry.pocketgreekdictionary.ui.theme.KoineDictionaryTheme
@@ -47,6 +48,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         TextToSpeechService.init(this)
         DictionaryService.setupDictionaryStructure()
+        AccentColorService.init(this)
         deepLinkEntryId = consumeEntryId(intent)
         enableEdgeToEdge()
         setContent {

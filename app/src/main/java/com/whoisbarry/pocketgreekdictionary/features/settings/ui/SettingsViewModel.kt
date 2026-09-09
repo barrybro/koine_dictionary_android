@@ -1,6 +1,7 @@
 package com.whoisbarry.pocketgreekdictionary.features.settings.ui
 
 import android.content.Context
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -9,6 +10,7 @@ import com.whoisbarry.pocketgreekdictionary.features.notification.DailyEntryNoti
 import com.whoisbarry.pocketgreekdictionary.features.notification.DailyEntryNotificationWorker
 import com.whoisbarry.pocketgreekdictionary.features.widget.DictionaryWidget
 import com.whoisbarry.pocketgreekdictionary.features.widget.DictionaryWidgetWorker
+import com.whoisbarry.pocketgreekdictionary.singletons.AccentColorService
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 
@@ -23,6 +25,13 @@ class SettingsViewModel : ViewModel() {
     private val _notificationInterval = MutableStateFlow(DailyEntryNotification.INTERVAL_OFF)
     val notificationInterval: StateFlow<Int> = _notificationInterval
 
+    /**
+     * The accent lives in [AccentColorService] rather than in this ViewModel: the theme reads it
+     * at the root of the app, above and outside the Settings screen that changes it.
+     */
+    val accentColor: StateFlow<Color> = AccentColorService.accentColor
+    val defaultAccentColor: Color = AccentColorService.defaultColor
+
     fun loadSettings(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         _updateInterval.value = prefs.getInt(WIDGET_INTERVAL_KEY, 24)
@@ -35,6 +44,14 @@ class SettingsViewModel : ViewModel() {
         if (!DailyEntryNotification.areNotificationsAllowed(context)) {
             setNotificationInterval(context, DailyEntryNotification.INTERVAL_OFF)
         }
+    }
+
+    fun setAccentColor(context: Context, color: Color) {
+        AccentColorService.setAccentColor(context, color)
+    }
+
+    fun resetAccentColor(context: Context) {
+        AccentColorService.resetAccentColor(context)
     }
 
     fun setUpdateInterval(context: Context, hours: Int) {
