@@ -5,13 +5,13 @@ plugins {
 
 android {
     namespace = "com.whoisbarry.pocketgreekdictionary"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.whoisbarry.pocketgreekdictionary"
         minSdk = 29
         targetSdk = 36
-        versionCode = 3
+        versionCode = 4
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

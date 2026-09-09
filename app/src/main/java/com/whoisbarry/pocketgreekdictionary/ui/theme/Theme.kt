@@ -2,14 +2,19 @@ package com.whoisbarry.pocketgreekdictionary.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
+import com.whoisbarry.pocketgreekdictionary.singletons.AccentColorService
 
 private val DarkColorScheme = darkColorScheme(
     primary = AzureBlue,
@@ -36,14 +41,17 @@ fun KoineDictionaryTheme(
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
+    val lightAccent by AccentColorService.lightAccentColor.collectAsState()
+    val darkAccent by AccentColorService.darkAccentColor.collectAsState()
+
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
 
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        darkTheme -> DarkColorScheme.withAccent(darkAccent)
+        else -> LightColorScheme.withAccent(lightAccent)
     }
 
     MaterialTheme(
@@ -52,3 +60,12 @@ fun KoineDictionaryTheme(
         content = content
     )
 }
+
+/**
+ * Swaps in the accent the user picked in Settings for this mode. Filled buttons draw their label in `onPrimary`,
+ * so that has to follow the accent too — a pale accent needs dark text on it, not white.
+ */
+private fun ColorScheme.withAccent(accent: Color): ColorScheme = copy(
+    primary = accent,
+    onPrimary = if (accent.luminance() > 0.5f) Color.Black else Color.White
+)

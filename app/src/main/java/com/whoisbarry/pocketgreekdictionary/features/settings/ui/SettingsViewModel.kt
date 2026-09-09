@@ -1,6 +1,7 @@
 package com.whoisbarry.pocketgreekdictionary.features.settings.ui
 
 import android.content.Context
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -9,6 +10,7 @@ import com.whoisbarry.pocketgreekdictionary.features.notification.DailyEntryNoti
 import com.whoisbarry.pocketgreekdictionary.features.notification.DailyEntryNotificationWorker
 import com.whoisbarry.pocketgreekdictionary.features.widget.DictionaryWidget
 import com.whoisbarry.pocketgreekdictionary.features.widget.DictionaryWidgetWorker
+import com.whoisbarry.pocketgreekdictionary.singletons.AccentColorService
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 
@@ -23,6 +25,15 @@ class SettingsViewModel : ViewModel() {
     private val _notificationInterval = MutableStateFlow(DailyEntryNotification.INTERVAL_OFF)
     val notificationInterval: StateFlow<Int> = _notificationInterval
 
+    /**
+     * The accents live in [AccentColorService] rather than in this ViewModel: the theme reads them
+     * at the root of the app, above and outside the Settings screen that changes them.
+     */
+    val lightAccentColor: StateFlow<Color> = AccentColorService.lightAccentColor
+    val darkAccentColor: StateFlow<Color> = AccentColorService.darkAccentColor
+    val defaultLightAccentColor: Color = AccentColorService.defaultLightColor
+    val defaultDarkAccentColor: Color = AccentColorService.defaultDarkColor
+
     fun loadSettings(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         _updateInterval.value = prefs.getInt(WIDGET_INTERVAL_KEY, 24)
@@ -35,6 +46,18 @@ class SettingsViewModel : ViewModel() {
         if (!DailyEntryNotification.areNotificationsAllowed(context)) {
             setNotificationInterval(context, DailyEntryNotification.INTERVAL_OFF)
         }
+    }
+
+    fun setLightAccentColor(context: Context, color: Color) {
+        AccentColorService.setLightAccentColor(context, color)
+    }
+
+    fun setDarkAccentColor(context: Context, color: Color) {
+        AccentColorService.setDarkAccentColor(context, color)
+    }
+
+    fun resetAccentColors(context: Context) {
+        AccentColorService.resetAccentColors(context)
     }
 
     fun setUpdateInterval(context: Context, hours: Int) {
