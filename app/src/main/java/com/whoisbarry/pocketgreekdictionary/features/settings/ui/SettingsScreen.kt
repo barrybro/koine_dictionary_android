@@ -17,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
@@ -31,7 +32,8 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier) 
     val uriHandler = LocalUriHandler.current
     val updateInterval by viewModel.updateInterval.collectAsState()
     val notificationInterval by viewModel.notificationInterval.collectAsState()
-    val accentColor by viewModel.accentColor.collectAsState()
+    val lightAccentColor by viewModel.lightAccentColor.collectAsState()
+    val darkAccentColor by viewModel.darkAccentColor.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.loadSettings(context)
@@ -41,16 +43,21 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier) 
     // the user answers it.
     var pendingNotificationInterval by remember { mutableStateOf<Int?>(null) }
     var notificationsBlocked by remember { mutableStateOf(false) }
-    var showAccentColorPicker by remember { mutableStateOf(false) }
+    // Which of the two accents the picker is open for, or null while it is closed.
+    var editingAccent by remember { mutableStateOf<AccentMode?>(null) }
 
-    if (showAccentColorPicker) {
+    editingAccent?.let { mode ->
         AccentColorPickerDialog(
-            initialColor = accentColor,
+            title = "${mode.label} Accent Color",
+            initialColor = if (mode == AccentMode.Light) lightAccentColor else darkAccentColor,
             onConfirm = { color ->
-                viewModel.setAccentColor(context, color)
-                showAccentColorPicker = false
+                when (mode) {
+                    AccentMode.Light -> viewModel.setLightAccentColor(context, color)
+                    AccentMode.Dark -> viewModel.setDarkAccentColor(context, color)
+                }
+                editingAccent = null
             },
-            onDismiss = { showAccentColorPicker = false }
+            onDismiss = { editingAccent = null }
         )
     }
 
@@ -112,6 +119,16 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier) 
                     text = "Pocket Greek Dictionary ${BuildConfig.VERSION_NAME}",
                     style = MaterialTheme.typography.bodyLarge
                 )
+
+                // Only of use while testing, so it is kept out of what users see in a release.
+                if (BuildConfig.DEBUG) {
+                    Text(
+                        text = "Build ${BuildConfig.VERSION_CODE}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
 //                Text(
 //                    text = "By me",
 //                    style = MaterialTheme.typography.bodyMedium,
@@ -135,46 +152,32 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier) 
                 )
 
                 Text(
-                    text = "Used for headings, entry words, the alphabet index and the tab bar.",
+                    text = "Used for headings, entry words, the alphabet index and the tab bar. " +
+                        "Each mode keeps its own colour.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .clickable { showAccentColorPicker = true }
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    ColorSwatch(color = accentColor, modifier = Modifier.size(44.dp))
+                AccentColorRow(
+                    mode = AccentMode.Light,
+                    color = lightAccentColor,
+                    onClick = { editingAccent = AccentMode.Light }
+                )
 
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = 16.dp)
-                    ) {
-                        Text(
-                            text = accentColor.toHexString(),
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Tap to choose a colour",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+                AccentColorRow(
+                    mode = AccentMode.Dark,
+                    color = darkAccentColor,
+                    onClick = { editingAccent = AccentMode.Dark }
+                )
 
                 TextButton(
-                    onClick = { viewModel.resetAccentColor(context) },
-                    enabled = accentColor != viewModel.defaultAccentColor,
+                    onClick = { viewModel.resetAccentColors(context) },
+                    enabled = lightAccentColor != viewModel.defaultLightAccentColor ||
+                        darkAccentColor != viewModel.defaultDarkAccentColor,
                     modifier = Modifier.padding(top = 4.dp)
                 ) {
-                    Text(text = "Reset to default")
+                    Text(text = "Reset to defaults")
                 }
             }
         }
@@ -283,6 +286,49 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier) 
                     }
                 )
             }
+        }
+    }
+}
+
+/** The two accents a user can set, one for each of the themes the app follows. */
+private enum class AccentMode(val label: String) {
+    Light("Light Mode"),
+    Dark("Dark Mode")
+}
+
+/** One tappable accent line: the swatch, its hex value, and which mode it applies to. */
+@Composable
+private fun AccentColorRow(
+    mode: AccentMode,
+    color: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        ColorSwatch(color = color, modifier = Modifier.size(44.dp))
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 16.dp)
+        ) {
+            Text(
+                text = mode.label,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "${color.toHexString()} — tap to choose a colour",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

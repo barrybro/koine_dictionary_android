@@ -45,9 +45,12 @@ private val HueSliderHeight = 28.dp
  * An interactive colour picker: a saturation/brightness field over a hue slider, both of which
  * follow a dragged finger. The colour is only applied if the user confirms, so backing out with
  * Cancel leaves the app on whatever accent it already had.
+ *
+ * [title] names which accent is being edited, since light and dark mode are picked separately.
  */
 @Composable
 fun AccentColorPickerDialog(
+    title: String,
     initialColor: Color,
     onConfirm: (Color) -> Unit,
     onDismiss: () -> Unit
@@ -64,7 +67,7 @@ fun AccentColorPickerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = "Accent Color") },
+        title = { Text(text = title) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 SaturationValueField(

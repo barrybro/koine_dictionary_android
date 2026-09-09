@@ -26,11 +26,13 @@ class SettingsViewModel : ViewModel() {
     val notificationInterval: StateFlow<Int> = _notificationInterval
 
     /**
-     * The accent lives in [AccentColorService] rather than in this ViewModel: the theme reads it
-     * at the root of the app, above and outside the Settings screen that changes it.
+     * The accents live in [AccentColorService] rather than in this ViewModel: the theme reads them
+     * at the root of the app, above and outside the Settings screen that changes them.
      */
-    val accentColor: StateFlow<Color> = AccentColorService.accentColor
-    val defaultAccentColor: Color = AccentColorService.defaultColor
+    val lightAccentColor: StateFlow<Color> = AccentColorService.lightAccentColor
+    val darkAccentColor: StateFlow<Color> = AccentColorService.darkAccentColor
+    val defaultLightAccentColor: Color = AccentColorService.defaultLightColor
+    val defaultDarkAccentColor: Color = AccentColorService.defaultDarkColor
 
     fun loadSettings(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -46,12 +48,16 @@ class SettingsViewModel : ViewModel() {
         }
     }
 
-    fun setAccentColor(context: Context, color: Color) {
-        AccentColorService.setAccentColor(context, color)
+    fun setLightAccentColor(context: Context, color: Color) {
+        AccentColorService.setLightAccentColor(context, color)
     }
 
-    fun resetAccentColor(context: Context) {
-        AccentColorService.resetAccentColor(context)
+    fun setDarkAccentColor(context: Context, color: Color) {
+        AccentColorService.setDarkAccentColor(context, color)
+    }
+
+    fun resetAccentColors(context: Context) {
+        AccentColorService.resetAccentColors(context)
     }
 
     fun setUpdateInterval(context: Context, hours: Int) {

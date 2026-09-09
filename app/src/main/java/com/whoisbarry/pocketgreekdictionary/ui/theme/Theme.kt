@@ -41,7 +41,8 @@ fun KoineDictionaryTheme(
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val accentColor by AccentColorService.accentColor.collectAsState()
+    val lightAccent by AccentColorService.lightAccentColor.collectAsState()
+    val darkAccent by AccentColorService.darkAccentColor.collectAsState()
 
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
@@ -49,8 +50,8 @@ fun KoineDictionaryTheme(
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
 
-        darkTheme -> DarkColorScheme.withAccent(accentColor)
-        else -> LightColorScheme.withAccent(accentColor)
+        darkTheme -> DarkColorScheme.withAccent(darkAccent)
+        else -> LightColorScheme.withAccent(lightAccent)
     }
 
     MaterialTheme(
@@ -61,7 +62,7 @@ fun KoineDictionaryTheme(
 }
 
 /**
- * Swaps in the accent the user picked in Settings. Filled buttons draw their label in `onPrimary`,
+ * Swaps in the accent the user picked in Settings for this mode. Filled buttons draw their label in `onPrimary`,
  * so that has to follow the accent too — a pale accent needs dark text on it, not white.
  */
 private fun ColorScheme.withAccent(accent: Color): ColorScheme = copy(

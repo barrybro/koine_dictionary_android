@@ -57,12 +57,15 @@ Separate from the widget: `DailyEntryNotification.showRandomEntry(context)` post
 
 ### Accent Color
 
-The colour the theme uses for `primary` is user-configurable. `AccentColorService` holds it in a
-`StateFlow` (SharedPreferences key `accent_color`, default `AzureBlue`) so that picking a new one
-recomposes `KoineDictionaryTheme` immediately; `MainActivity.onCreate` calls `init` before
-`setContent`. The theme also derives `onPrimary` from the accent's luminance, otherwise a pale
-accent leaves filled buttons with unreadable white labels. `AccentColorPickerDialog` is a
-self-contained HSV picker — no colour-picker dependency.
+The colour the theme uses for `primary` is user-configurable, separately for each mode.
+`AccentColorService` holds both in `StateFlow`s (SharedPreferences keys `accent_color_light`,
+default black, and `accent_color_dark`, default white) so that picking a new one recomposes
+`KoineDictionaryTheme` immediately; `MainActivity.onCreate` calls `init` before `setContent`. A
+value under the pre-split `accent_color` key is migrated into both on first `init`. The theme picks
+between the two on `darkTheme` and derives `onPrimary` from the chosen accent's luminance,
+otherwise a pale accent leaves filled buttons with unreadable white labels.
+`AccentColorPickerDialog` is a self-contained HSV picker — no colour-picker dependency; its
+`title` names which mode is being edited.
 
 ### Database Schema
 
