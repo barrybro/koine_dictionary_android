@@ -46,7 +46,11 @@ object DictionaryService {
     fun setupDictionaryStructure() {
         for (letter in greekAlphabet) {
             val entries = getEntriesByKeyLetter(getContext(), letter.toString().lowercase())
-            completeHashMap[letter.toString()] = entries.sortedBy { it.word.withoutDiacritics }
+            // sortedBy would strip the accents again on every comparison; once per entry is enough.
+            completeHashMap[letter.toString()] = entries
+                .map { it to it.word.withoutDiacritics }
+                .sortedBy { it.second }
+                .map { it.first }
         }
     }
 

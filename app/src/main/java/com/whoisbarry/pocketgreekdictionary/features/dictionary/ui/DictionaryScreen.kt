@@ -156,9 +156,9 @@ private fun DictionaryList(
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
 
-    // Group the filtered entries by their keyLetter to maintain the alphabetical structure
-    val groupedEntries = uiState.groupBy { it.keyLetter }
-    val dictionaryKeys = groupedEntries.keys.sorted()
+    // Sections and their positions arrive ready-made from the ViewModel, worked out off the main
+    // thread, so a keystroke doesn't regroup thousands of entries during composition.
+    val indexKeys = remember(uiState) { uiState.sections.map { it.keyLetter } }
 
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
@@ -171,14 +171,6 @@ private fun DictionaryList(
         }
     }
 
-    val keyToIndex = remember(dictionaryKeys, groupedEntries) {
-        var cumulativeIndex = 0
-        dictionaryKeys.associateWith { key ->
-            val currentIndex = cumulativeIndex
-            cumulativeIndex += 1 + (groupedEntries[key]?.size ?: 0)
-            currentIndex
-        }
-    }
 
     Column(modifier = modifier.fillMaxHeight()) {
         OutlinedTextField(
@@ -202,7 +194,8 @@ private fun DictionaryList(
                 state = listState,
                 modifier = Modifier.weight(1f)
             ) {
-                for (key in dictionaryKeys) {
+                for (section in uiState.sections) {
+                    val key = section.keyLetter
                     item(key = key) {
                         Text(
                             text = "${key.uppercase()} ${key.lowercase()}",
@@ -212,8 +205,7 @@ private fun DictionaryList(
                             modifier = Modifier.padding(16.dp)
                         )
                     }
-                    val entries = groupedEntries[key] ?: emptyList()
-                    items(entries, key = { it.id }) { entry ->
+                    items(section.entries, key = { it.id }) { entry ->
                         DictionaryEntryRow(
                             entry = entry,
                             selected = entry.id == selectedEntryId,
@@ -224,9 +216,9 @@ private fun DictionaryList(
             }
 
             AlphabetIndex(
-                keys = dictionaryKeys,
+                keys = indexKeys,
                 onKeySelected = { key ->
-                    keyToIndex[key]?.let { index ->
+                    uiState.headingIndexes[key]?.let { index ->
                         // Jumps rather than animates: a scrub follows the finger, so an animation
                         // per letter would queue up and lag behind it.
                         coroutineScope.launch { listState.scrollToItem(index) }
