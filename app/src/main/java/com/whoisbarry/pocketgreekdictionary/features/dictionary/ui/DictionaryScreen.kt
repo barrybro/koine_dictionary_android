@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.interaction.DragInteraction
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,17 +18,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -36,16 +44,27 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.whoisbarry.pocketgreekdictionary.data.models.DictionaryEntry
+import com.whoisbarry.pocketgreekdictionary.ui.theme.LocalGreekFontFamily
 import kotlinx.coroutines.launch
+
+/** From this width up the list and the open entry are shown side by side. */
+private val TwoPaneMinWidth = 700.dp
+
+/** Bounds on the list's share of the two-pane layout; the entry takes the rest. */
+private val MinListPaneWidth = 320.dp
+private val MaxListPaneWidth = 420.dp
 
 /** Width of the alphabet index track, wide enough to be a comfortable drag target. */
 private val IndexWidth = 30.dp
@@ -56,38 +75,104 @@ private val MaxIndexSlotHeight = 24.dp
 
 @Composable
 fun DictionaryScreen(viewModel: DictionaryViewModel, modifier: Modifier = Modifier) {
-    val uiState by viewModel.uiState.collectAsState()
-    val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedEntry by viewModel.selectedEntry.collectAsState()
 
-    if (selectedEntry != null) {
-        BackHandler {
-            viewModel.selectEntry(null)
-        }
-        DictionaryEntryDetailScreen(
-            entry = selectedEntry!!,
-            onBack = { viewModel.selectEntry(null) }
-        )
-        return
-    }
-
-    // Group the filtered entries by their keyLetter to maintain the alphabetical structure
-    val groupedEntries = uiState.groupBy { it.keyLetter }
-    val dictionaryKeys = groupedEntries.keys.sorted()
-
+    // Hoisted above both layouts so the list keeps its place when an entry is opened and closed,
+    // or when the window is resized between one pane and two.
     val listState = rememberLazyListState()
-    val coroutineScope = rememberCoroutineScope()
 
-    val keyToIndex = remember(dictionaryKeys, groupedEntries) {
-        var cumulativeIndex = 0
-        dictionaryKeys.associateWith { key ->
-            val currentIndex = cumulativeIndex
-            cumulativeIndex += 1 + (groupedEntries[key]?.size ?: 0)
-            currentIndex
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        if (maxWidth >= TwoPaneMinWidth) {
+            val listWidth = (maxWidth * 0.4f).coerceIn(MinListPaneWidth, MaxListPaneWidth)
+
+            Row(modifier = Modifier.fillMaxSize()) {
+                DictionaryList(
+                    viewModel = viewModel,
+                    listState = listState,
+                    selectedEntryId = selectedEntry?.id,
+                    modifier = Modifier.width(listWidth)
+                )
+
+                VerticalDivider()
+
+                val entry = selectedEntry
+                if (entry != null) {
+                    // No back button: the list the entry was picked from is still beside it.
+                    DictionaryEntryDetailScreen(
+                        entry = entry,
+                        onBack = null,
+                        modifier = Modifier.weight(1f)
+                    )
+                } else {
+                    NoEntrySelected(modifier = Modifier.weight(1f))
+                }
+            }
+        } else {
+            val entry = selectedEntry
+            if (entry != null) {
+                BackHandler {
+                    viewModel.selectEntry(null)
+                }
+                DictionaryEntryDetailScreen(
+                    entry = entry,
+                    onBack = { viewModel.selectEntry(null) }
+                )
+            } else {
+                DictionaryList(
+                    viewModel = viewModel,
+                    listState = listState,
+                    selectedEntryId = null
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun NoEntrySelected(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "Select an entry to see it here",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+/** The searchable, sectioned list of entries, with the alphabet index down its side. */
+@Composable
+private fun DictionaryList(
+    viewModel: DictionaryViewModel,
+    listState: LazyListState,
+    selectedEntryId: Int?,
+    modifier: Modifier = Modifier
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
+
+    // Sections and their positions arrive ready-made from the ViewModel, worked out off the main
+    // thread, so a keystroke doesn't regroup thousands of entries during composition.
+    val indexKeys = remember(uiState) { uiState.sections.map { it.keyLetter } }
+
+    val coroutineScope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
+
+    // Dragging the results puts the keyboard away, so what it was hiding can be reached. Only a
+    // drag counts: a jump from the alphabet index leaves the search being typed undisturbed.
+    LaunchedEffect(listState) {
+        listState.interactionSource.interactions.collect { interaction ->
+            if (interaction is DragInteraction.Start) focusManager.clearFocus()
         }
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
+
+    Column(modifier = modifier.fillMaxHeight()) {
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { viewModel.onSearchQueryChanged(it) },
@@ -96,7 +181,10 @@ fun DictionaryScreen(viewModel: DictionaryViewModel, modifier: Modifier = Modifi
                 .padding(16.dp),
             placeholder = { Text("Search in Greek or English") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            singleLine = true
+            singleLine = true,
+            // Results already follow every keystroke, so the search key only closes the keyboard.
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() })
         )
 
         Row(
@@ -106,19 +194,21 @@ fun DictionaryScreen(viewModel: DictionaryViewModel, modifier: Modifier = Modifi
                 state = listState,
                 modifier = Modifier.weight(1f)
             ) {
-                for (key in dictionaryKeys) {
+                for (section in uiState.sections) {
+                    val key = section.keyLetter
                     item(key = key) {
                         Text(
                             text = "${key.uppercase()} ${key.lowercase()}",
+                            fontFamily = LocalGreekFontFamily.current,
                             fontWeight = FontWeight.Bold,
                             fontSize = 24.sp,
                             modifier = Modifier.padding(16.dp)
                         )
                     }
-                    val entries = groupedEntries[key] ?: emptyList()
-                    items(entries, key = { it.id }) { entry ->
+                    items(section.entries, key = { it.id }) { entry ->
                         DictionaryEntryRow(
                             entry = entry,
+                            selected = entry.id == selectedEntryId,
                             onClick = { viewModel.selectEntry(entry) }
                         )
                     }
@@ -126,9 +216,9 @@ fun DictionaryScreen(viewModel: DictionaryViewModel, modifier: Modifier = Modifi
             }
 
             AlphabetIndex(
-                keys = dictionaryKeys,
+                keys = indexKeys,
                 onKeySelected = { key ->
-                    keyToIndex[key]?.let { index ->
+                    uiState.headingIndexes[key]?.let { index ->
                         // Jumps rather than animates: a scrub follows the finger, so an animation
                         // per letter would queue up and lag behind it.
                         coroutineScope.launch { listState.scrollToItem(index) }
@@ -228,6 +318,7 @@ private fun AlphabetIndex(
                     // Without an explicit line height the letters inherit the body style's, which
                     // is far taller than the type and pushes the tail of the alphabet off screen.
                     lineHeight = fontSize * 1.15f,
+                    fontFamily = LocalGreekFontFamily.current,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -236,13 +327,29 @@ private fun AlphabetIndex(
     }
 }
 
+/**
+ * One entry in the list. [selected] marks the entry open beside the list in the two-pane layout,
+ * so it can be picked out among its neighbours.
+ */
 @Composable
-fun DictionaryEntryRow(entry: DictionaryEntry, onClick: () -> Unit = {}) {
+fun DictionaryEntryRow(
+    entry: DictionaryEntry,
+    selected: Boolean = false,
+    onClick: () -> Unit = {}
+) {
+    val containerColor = if (selected) {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+            .compositeOver(MaterialTheme.colorScheme.surfaceContainerLow)
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerLow
+    }
+
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clickable(onClick = onClick)
+            .clickable(onClick = onClick),
+        colors = CardDefaults.elevatedCardColors(containerColor = containerColor)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -250,6 +357,7 @@ fun DictionaryEntryRow(entry: DictionaryEntry, onClick: () -> Unit = {}) {
             Text(
                 text = entry.word,
                 style = MaterialTheme.typography.titleLarge,
+                fontFamily = LocalGreekFontFamily.current,
                 color = MaterialTheme.colorScheme.primary
             )
             Text(

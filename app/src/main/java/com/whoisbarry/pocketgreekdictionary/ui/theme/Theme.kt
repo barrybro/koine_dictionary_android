@@ -9,12 +9,14 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import com.whoisbarry.pocketgreekdictionary.singletons.AccentColorService
+import com.whoisbarry.pocketgreekdictionary.singletons.GreekFontService
 
 private val DarkColorScheme = darkColorScheme(
     primary = AzureBlue,
@@ -43,6 +45,7 @@ fun KoineDictionaryTheme(
 ) {
     val lightAccent by AccentColorService.lightAccentColor.collectAsState()
     val darkAccent by AccentColorService.darkAccentColor.collectAsState()
+    val greekFont by GreekFontService.greekFont.collectAsState()
 
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
@@ -54,11 +57,13 @@ fun KoineDictionaryTheme(
         else -> LightColorScheme.withAccent(lightAccent)
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    CompositionLocalProvider(LocalGreekFontFamily provides greekFont.fontFamily) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }
 
 /**

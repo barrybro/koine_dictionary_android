@@ -14,6 +14,7 @@ import android.text.StaticLayout
 import android.text.TextPaint
 import com.whoisbarry.pocketgreekdictionary.R
 import com.whoisbarry.pocketgreekdictionary.data.models.DictionaryEntry
+import com.whoisbarry.pocketgreekdictionary.singletons.GreekFontService
 
 private const val IMAGE_WIDTH = 1080
 private const val MIN_IMAGE_HEIGHT = 1080
@@ -57,11 +58,13 @@ fun renderEntryImage(context: Context, entry: DictionaryEntry): Bitmap {
     val word = entry.word.ifBlank { entry.fullWord }
     val gloss = entry.gloss.trim()
     val source = entry.sourceName.trim()
+    // The word is set in the Greek font chosen in Settings, so the image matches the app.
+    val wordTypeface = GreekFontService.greekFont.value.boldTypeface(context)
 
-    var block = layoutContent(word, gloss, source, contentWidth, TEXT_SCALES.last())
+    var block = layoutContent(word, wordTypeface, gloss, source, contentWidth, TEXT_SCALES.last())
     var scale = TEXT_SCALES.last()
     for (candidate in TEXT_SCALES) {
-        val candidateBlock = layoutContent(word, gloss, source, contentWidth, candidate)
+        val candidateBlock = layoutContent(word, wordTypeface, gloss, source, contentWidth, candidate)
         if (candidateBlock.height + 2 * CARD_PADDING + 2 * PAGE_MARGIN + FOOTER_AREA <= MIN_IMAGE_HEIGHT) {
             block = candidateBlock
             scale = candidate
@@ -122,12 +125,13 @@ private class ContentBlock(
 
 private fun layoutContent(
     word: String,
+    wordTypeface: Typeface,
     gloss: String,
     source: String,
     width: Int,
     scale: Float
 ): ContentBlock {
-    val wordLayout = buildLayout(word, wordPaint(scale), width)
+    val wordLayout = buildLayout(word, wordPaint(scale, wordTypeface), width)
     val glossLayout = gloss.takeIf { it.isNotEmpty() }
         ?.let { buildLayout(it, glossPaint(scale), width) }
     val sourceLayout = source.takeIf { it.isNotEmpty() }
@@ -156,10 +160,10 @@ private fun buildLayout(
         .setIncludePad(false)
         .build()
 
-private fun wordPaint(scale: Float) = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+private fun wordPaint(scale: Float, wordTypeface: Typeface) = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
     color = COLOR_PRIMARY
     textSize = WORD_TEXT_SIZE * scale
-    typeface = Typeface.create(Typeface.SERIF, Typeface.BOLD)
+    typeface = wordTypeface
 }
 
 private fun glossPaint(scale: Float) = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
