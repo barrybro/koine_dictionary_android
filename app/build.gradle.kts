@@ -11,7 +11,7 @@ android {
         applicationId = "com.whoisbarry.pocketgreekdictionary"
         minSdk = 29
         targetSdk = 36
-        versionCode = 5
+        versionCode = 6
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -19,7 +19,10 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // R8: strips unused code (most of material-icons-extended, for a start), optimizes
+            // and shortens what's left. Play Console flags the release as unoptimized without it.
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

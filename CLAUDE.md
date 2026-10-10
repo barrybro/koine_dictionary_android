@@ -110,4 +110,4 @@ Table `greekDictionaryEntry`: `id`, `difficulty`, `frequency`, `word`, `fullWord
 - Min SDK 29, Target SDK 36, Kotlin 2.4.0, Compose BOM 2026.05.01
 - `TextToSpeechService` uses locale `el-GR` for Greek pronunciation
 - `StringUtils.kt` provides `String.withoutDiacritics` extension for search normalization (removes Greek combining diacritical marks, lowercases with Greek locale)
-- Release build has minification disabled (`isMinifyEnabled = false`)
+- Release build is minified and resource-shrunk with R8 (`isMinifyEnabled`/`isShrinkResources`); anything only reached by reflection needs a keep rule in `app/proguard-rules.pro`. Test a release build, not just debug, after adding libraries that use reflection
