@@ -7,16 +7,27 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.outlined.FormatQuote
+import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -33,6 +44,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
@@ -96,9 +108,30 @@ fun DictionaryEntryDetailScreen(
                 modifier = Modifier.widthIn(max = MaxContentWidth)
             )
 
-            Button(
-                enabled = !isSharingImage,
-                onClick = {
+            // Speak above Share, as on iOS. Both span the card's width and line up with its edges
+            // (the card insets itself by 16dp), so they read as one column rather than two pills
+            // of different sizes.
+            val actionButtonModifier = Modifier
+                .widthIn(max = MaxContentWidth)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+
+            if (TextToSpeechService.canSpeak()) {
+                Button(
+                    onClick = {
+                        TextToSpeechService.speakText(entry.word)
+                    },
+                    modifier = actionButtonModifier.padding(top = 16.dp)
+                ) {
+                    ButtonIcon(Icons.AutoMirrored.Filled.VolumeUp)
+                    Text("Speak Entry")
+                }
+            }
+
+            EntryShareMenu(
+                isSharingImage = isSharingImage,
+                onShareText = { shareText(context, entry.shareText()) },
+                onShareImage = {
                     isSharingImage = true
                     coroutineScope.launch {
                         val uri = withContext(Dispatchers.IO) {
@@ -116,44 +149,78 @@ fun DictionaryEntryDetailScreen(
                         }
                     }
                 },
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(top = 16.dp)
-            ) {
-                Text("Share as image")
-            }
-
-            Button(
-                onClick = {
-                    val sendIntent: Intent = Intent().apply {
-                        action = Intent.ACTION_SEND
-                        putExtra(Intent.EXTRA_TEXT, entry.shareText())
-                        type = "text/plain"
-                    }
-                    val shareIntent = Intent.createChooser(sendIntent, null)
-                    context.startActivity(shareIntent)
-                },
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(top = 8.dp)
-            ) {
-                Text("Share as text")
-            }
-
-            if (TextToSpeechService.canSpeak()) {
-                Button(
-                    onClick = {
-                        TextToSpeechService.speakText(entry.word)
-                    },
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .padding(top = 8.dp)
-                ) {
-                    Text("Speak Entry")
-                }
-            }
+                modifier = actionButtonModifier.padding(top = 8.dp)
+            )
         }
     }
+}
+
+/**
+ * One Share button that asks what to share — the entry as text, or as the rendered card image —
+ * instead of a button for each, matching the iOS app. Either choice goes on to the system share
+ * sheet. Share Image is disabled while a previous image is still being rendered.
+ */
+@Composable
+private fun EntryShareMenu(
+    isSharingImage: Boolean,
+    onShareText: () -> Unit,
+    onShareImage: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    // The Box anchors the menu to the button, so it drops down from it rather than the screen edge.
+    Box(modifier = modifier) {
+        Button(
+            onClick = { expanded = true },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            ButtonIcon(Icons.Filled.Share)
+            Text("Share")
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text("Share Text") },
+                leadingIcon = { Icon(Icons.Outlined.FormatQuote, contentDescription = null) },
+                onClick = {
+                    expanded = false
+                    onShareText()
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("Share Image") },
+                leadingIcon = { Icon(Icons.Outlined.Image, contentDescription = null) },
+                enabled = !isSharingImage,
+                onClick = {
+                    expanded = false
+                    onShareImage()
+                }
+            )
+        }
+    }
+}
+
+/** A button's leading icon, sized and spaced as Material 3 specifies. */
+@Composable
+private fun ButtonIcon(imageVector: ImageVector) {
+    Icon(
+        imageVector = imageVector,
+        contentDescription = null,
+        modifier = Modifier.size(ButtonDefaults.IconSize)
+    )
+    Spacer(modifier = Modifier.width(ButtonDefaults.IconSpacing))
+}
+
+private fun shareText(context: Context, text: String) {
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_TEXT, text)
+    }
+    context.startActivity(Intent.createChooser(intent, "Share Entry"))
 }
 
 private fun saveBitmapAndGetUri(context: Context, bitmap: Bitmap, entryId: Int): Uri? {
