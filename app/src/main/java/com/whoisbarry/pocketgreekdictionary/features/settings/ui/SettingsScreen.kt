@@ -25,6 +25,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.whoisbarry.pocketgreekdictionary.BuildConfig
 import com.whoisbarry.pocketgreekdictionary.features.notification.DailyEntryNotification
+import com.whoisbarry.pocketgreekdictionary.ui.theme.GreekFont
 
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier) {
@@ -34,6 +35,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier) 
     val notificationInterval by viewModel.notificationInterval.collectAsState()
     val lightAccentColor by viewModel.lightAccentColor.collectAsState()
     val darkAccentColor by viewModel.darkAccentColor.collectAsState()
+    val greekFont by viewModel.greekFont.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.loadSettings(context)
@@ -99,6 +101,10 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier) 
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
+            // On a wide screen the cards are centred at a readable width rather than stretched
+            // edge to edge; the whole width still scrolls.
+            .wrapContentWidth(Alignment.CenterHorizontally)
+            .widthIn(max = 640.dp)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -178,6 +184,37 @@ fun SettingsScreen(viewModel: SettingsViewModel, modifier: Modifier = Modifier) 
                     modifier = Modifier.padding(top = 4.dp)
                 ) {
                     Text(text = "Reset to defaults")
+                }
+            }
+        }
+
+        // Greek Font Group
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Greek Font",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                Text(
+                    text = "Used for entry words, the alphabet and the index.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                GreekFont.entries.forEach { font ->
+                    GreekFontRow(
+                        font = font,
+                        selected = font == greekFont,
+                        onClick = { viewModel.setGreekFont(context, font) }
+                    )
                 }
             }
         }
@@ -328,6 +365,47 @@ private fun AccentColorRow(
                 text = "${color.toHexString()} — tap to choose a colour",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+/** Shown in each font so the choice can be made on how the Greek actually looks. */
+private const val GREEK_FONT_SAMPLE = "ἐν ἀρχῇ ἦν ὁ λόγος"
+
+/** One font option: its name, and a line of polytonic Greek set in it. */
+@Composable
+private fun GreekFontRow(
+    font: GreekFont,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RadioButton(
+            selected = selected,
+            onClick = onClick
+        )
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 8.dp)
+        ) {
+            Text(
+                text = font.label,
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Text(
+                text = GREEK_FONT_SAMPLE,
+                style = MaterialTheme.typography.titleLarge,
+                fontFamily = font.fontFamily,
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }

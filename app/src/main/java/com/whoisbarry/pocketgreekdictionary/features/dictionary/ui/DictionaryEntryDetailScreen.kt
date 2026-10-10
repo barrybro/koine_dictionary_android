@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import com.whoisbarry.pocketgreekdictionary.data.models.DictionaryEntry
 import com.whoisbarry.pocketgreekdictionary.singletons.TextToSpeechService
+import com.whoisbarry.pocketgreekdictionary.ui.theme.LocalGreekFontFamily
 import com.whoisbarry.pocketgreekdictionary.util.renderEntryImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -44,24 +46,38 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
+/** Past this the entry reads as a long thin strip, so on a wide screen it is centred instead. */
+private val MaxContentWidth = 640.dp
+
+/**
+ * An entry's detail view. [onBack] is null where there is nothing to go back to — in the
+ * two-pane layout, where the list stays beside the entry — and hides the back button.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DictionaryEntryDetailScreen(entry: DictionaryEntry, onBack: () -> Unit) {
+fun DictionaryEntryDetailScreen(
+    entry: DictionaryEntry,
+    onBack: (() -> Unit)?,
+    modifier: Modifier = Modifier
+) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
     var isSharingImage by remember { mutableStateOf(false) }
 
     Scaffold(
+        modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text(entry.word) },
+                title = { Text(entry.word, fontFamily = LocalGreekFontFamily.current) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
+                    if (onBack != null) {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back"
+                            )
+                        }
                     }
                 }
             )
@@ -72,9 +88,13 @@ fun DictionaryEntryDetailScreen(entry: DictionaryEntry, onBack: () -> Unit) {
                 .padding(innerPadding)
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(16.dp)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            DictionaryEntryDetailRow(entry)
+            DictionaryEntryDetailRow(
+                entry = entry,
+                modifier = Modifier.widthIn(max = MaxContentWidth)
+            )
 
             Button(
                 enabled = !isSharingImage,
@@ -165,9 +185,13 @@ private fun shareImage(context: Context, uri: Uri, caption: String) {
 }
 
 @Composable
-fun DictionaryEntryDetailRow(entry: DictionaryEntry, onClick: () -> Unit = {}) {
+fun DictionaryEntryDetailRow(
+    entry: DictionaryEntry,
+    onClick: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
     ElevatedCard(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable(onClick = onClick)
@@ -180,6 +204,7 @@ fun DictionaryEntryDetailRow(entry: DictionaryEntry, onClick: () -> Unit = {}) {
             Text(
                 text = entry.word,
                 style = MaterialTheme.typography.titleLarge,
+                fontFamily = LocalGreekFontFamily.current,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(top = 8.dp)
             )

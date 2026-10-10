@@ -11,6 +11,8 @@ import com.whoisbarry.pocketgreekdictionary.features.notification.DailyEntryNoti
 import com.whoisbarry.pocketgreekdictionary.features.widget.DictionaryWidget
 import com.whoisbarry.pocketgreekdictionary.features.widget.DictionaryWidgetWorker
 import com.whoisbarry.pocketgreekdictionary.singletons.AccentColorService
+import com.whoisbarry.pocketgreekdictionary.singletons.GreekFontService
+import com.whoisbarry.pocketgreekdictionary.ui.theme.GreekFont
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 
@@ -33,6 +35,9 @@ class SettingsViewModel : ViewModel() {
     val darkAccentColor: StateFlow<Color> = AccentColorService.darkAccentColor
     val defaultLightAccentColor: Color = AccentColorService.defaultLightColor
     val defaultDarkAccentColor: Color = AccentColorService.defaultDarkColor
+
+    /** Like the accents, the Greek font lives in [GreekFontService] because the theme reads it. */
+    val greekFont: StateFlow<GreekFont> = GreekFontService.greekFont
 
     fun loadSettings(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -58,6 +63,10 @@ class SettingsViewModel : ViewModel() {
 
     fun resetAccentColors(context: Context) {
         AccentColorService.resetAccentColors(context)
+    }
+
+    fun setGreekFont(context: Context, font: GreekFont) {
+        GreekFontService.setGreekFont(context, font)
     }
 
     fun setUpdateInterval(context: Context, hours: Int) {

@@ -55,6 +55,16 @@ Separate from the widget: `DailyEntryNotification.showRandomEntry(context)` post
 
 `MainActivity.entryIntent(context, entryId)` builds the intent used by both the widget tap and the notification tap. `MainActivity` is `launchMode="singleTask"` so a tap while the app is already running is routed to the running instance as `onNewIntent` instead of merely bringing the task to the front — don't drop that without re-testing a widget tap with the app in the background. `MainActivity` reads the id (clearing it so recreation doesn't reopen it), `MainScreen` switches to the Dictionary tab and calls `DictionaryViewModel.selectEntryById(id)`, and `DictionaryScreen` renders `DictionaryEntryDetailScreen` — the same view a list tap opens. Entry selection lives in `DictionaryViewModel.selectedEntry`, not in screen-local state.
 
+### Tablet / Wide Layouts
+
+Layout follows the available width (via `BoxWithConstraints`), not the device type, so a landscape
+phone, a foldable or a resized window gets the same treatment. `MainScreen` swaps the bottom
+`TabRow` for a `NavigationRail` at 600dp. `DictionaryScreen` goes two-pane (list beside
+`DictionaryEntryDetailScreen`, with `onBack = null`) once its own content area reaches 700dp; its
+`LazyListState` is hoisted above both layouts so the scroll position survives the switch. The
+alphabet is an adaptive grid; settings and entry detail cap their content at 640dp. `MainScreen`
+consumes its Scaffold insets so nested Scaffolds (the detail view) don't pad for the status bar twice.
+
 ### Accent Color
 
 The colour the theme uses for `primary` is user-configurable, separately for each mode.
@@ -66,6 +76,22 @@ between the two on `darkTheme` and derives `onPrimary` from the chosen accent's 
 otherwise a pale accent leaves filled buttons with unreadable white labels.
 `AccentColorPickerDialog` is a self-contained HSV picker — no colour-picker dependency; its
 `title` names which mode is being edited.
+
+### Greek Font
+
+Greek text (headwords, alphabet, index, the shared entry image) is set in a user-chosen font;
+English glosses and the rest of the UI stay in the system font. `GreekFont` (enum in `ui/theme/`)
+lists the options — Gentium Book Plus (default), Noto Serif, Noto Sans, GFS Didot, GFS Porson,
+System — and `GreekFontService` holds the choice in a `StateFlow` (SharedPreferences key
+`greek_font`, stored as the enum name). `KoineDictionaryTheme` provides it as
+`LocalGreekFontFamily`; pass `fontFamily = LocalGreekFontFamily.current` on any new `Text` that
+shows Greek. Fonts whose OFL licence has a Reserved Font Name (Gentium, GFS Didot, GFS Porson)
+must ship as unmodified release files — subsetting counts as modification. Only the Noto files
+are subset (Latin + Greek + Greek Extended, via `pyftsubset`). The OFL licences are in
+`assets/licenses/`. The home-screen widget (RemoteViews) still uses the system font, and
+`android:fontFamily="@font/…"` in its layout can't change that: the launcher inflates widgets
+with a restricted context, and `TextView` ignores font resources there. Drawing the text into a
+bitmap is the only route.
 
 ### Database Schema
 
