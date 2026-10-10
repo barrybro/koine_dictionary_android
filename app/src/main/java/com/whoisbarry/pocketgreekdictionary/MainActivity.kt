@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -213,6 +214,10 @@ fun MainScreen(entryId: Int? = null, onEntryIdHandled: () -> Unit = {}) {
                         // Screens with their own Scaffold, like an entry's detail view, would
                         // otherwise pad for the status bar a second time under this top bar.
                         .consumeWindowInsets(innerPadding)
+                        // Edge to edge, the keyboard is drawn over the content rather than the
+                        // window shrinking for it, so make room here. The bars are consumed above,
+                        // so this only adds what the keyboard covers beyond them.
+                        .imePadding()
                         .fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
